@@ -153,11 +153,11 @@ function renderTabContent() {
             <div class="meal-logger" style="animation: fadeIn 0.3s ease-out;">
                 <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1rem;">Baza Posiłków</h2>
                 <form id="mealForm">
-                    <div class="input-group">
+                    <div class="input-group" style="margin-bottom:0.75rem;">
                         <label for="mealName">Nazwa posiłku</label>
                         <input type="text" id="mealName" placeholder="np. Owsianka z białkiem" required autocomplete="off">
                     </div>
-                    <div style="display:flex; gap:0.5rem; margin-bottom: 1.25rem;">
+                    <div style="display:flex; gap:0.5rem; margin-bottom: 0.75rem;">
                         <div style="flex:1;">
                             <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Kcal</label>
                             <input type="number" id="mealKcal" placeholder="450" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
@@ -167,11 +167,25 @@ function renderTabContent() {
                             <input type="number" id="mealProtein" placeholder="30" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
                         </div>
                     </div>
+                    <div style="display:flex; gap:0.5rem; margin-bottom: 1.25rem;">
+                        <div style="flex:1;">
+                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Węgle (g)</label>
+                            <input type="number" id="mealCarbs" placeholder="50" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
+                        </div>
+                        <div style="flex:1;">
+                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Tłuszcz (g)</label>
+                            <input type="number" id="mealFats" placeholder="15" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
+                        </div>
+                    </div>
                     <button type="submit" class="btn-primary" style="background:linear-gradient(to right, #10b981, #059669);">Dodaj Posiłek</button>
                 </form>
                 
-                <div id="mealSummary" style="margin-top:1.5rem; padding:0.75rem; border-radius:0.5rem; background:rgba(0,0,0,0.3); text-align:center; border:1px solid rgba(16, 185, 129, 0.2);">
-                     <strong style="color:var(--text-color);">Podsumowanie: </strong> <span id="totalKcal" style="color:#10b981; font-weight:bold;">0</span> kcal | <span id="totalProtein" style="color:#60a5fa; font-weight:bold;">0</span> g białka
+                <div id="mealSummary" style="margin-top:1.5rem; padding:0.75rem; border-radius:0.5rem; background:rgba(0,0,0,0.3); text-align:center; border:1px solid rgba(16, 185, 129, 0.2); font-size:0.9rem;">
+                     <strong style="color:var(--text-color);">Suma: </strong> 
+                     <span id="totalKcal" style="color:#10b981; font-weight:bold;">0</span> kcal | 
+                     <span id="totalProtein" style="color:#60a5fa; font-weight:bold;">0</span>g B | 
+                     <span id="totalCarbs" style="color:#f59e0b; font-weight:bold;">0</span>g W | 
+                     <span id="totalFats" style="color:#ef4444; font-weight:bold;">0</span>g T
                 </div>
 
                 <div class="list-container" id="mealList"></div>
@@ -284,18 +298,24 @@ function handleAddMeal(e) {
     const nameInput = document.getElementById('mealName');
     const kcalInput = document.getElementById('mealKcal');
     const proteinInput = document.getElementById('mealProtein');
+    const carbsInput = document.getElementById('mealCarbs');
+    const fatsInput = document.getElementById('mealFats');
     
     meals.push({
         id: Date.now().toString(),
         name: nameInput.value.trim(),
         kcal: parseInt(kcalInput.value) || 0,
-        protein: parseInt(proteinInput.value) || 0
+        protein: parseInt(proteinInput.value) || 0,
+        carbs: parseInt(carbsInput.value) || 0,
+        fats: parseInt(fatsInput.value) || 0
     });
     saveData();
     
     nameInput.value = '';
     kcalInput.value = '';
     proteinInput.value = '';
+    carbsInput.value = '';
+    fatsInput.value = '';
     renderMealsList();
 }
 
@@ -303,11 +323,15 @@ function renderMealsList() {
     const listDiv = document.getElementById('mealList');
     let totalKcal = 0;
     let totalProtein = 0;
+    let totalCarbs = 0;
+    let totalFats = 0;
     
     if (meals.length === 0) {
         listDiv.innerHTML = '<p style="text-align:center; color: var(--text-muted); font-size: 0.875rem; margin-top:1rem;">Brak zapisanych posiłków.</p>';
         document.getElementById('totalKcal').textContent = '0';
         document.getElementById('totalProtein').textContent = '0';
+        document.getElementById('totalCarbs').textContent = '0';
+        document.getElementById('totalFats').textContent = '0';
         return;
     }
     
@@ -315,12 +339,14 @@ function renderMealsList() {
     meals.forEach(m => {
         totalKcal += m.kcal;
         totalProtein += m.protein;
+        totalCarbs += m.carbs || 0;
+        totalFats += m.fats || 0;
         
         html += `
             <li class="list-item">
                 <div class="item-info">
                     <strong>${m.name}</strong>
-                    <span class="item-details" style="color:#10b981;">🔥 ${m.kcal} kcal &bull; <span style="color:#60a5fa;">🥩 ${m.protein}g białka</span></span>
+                    <span class="item-details" style="color:#10b981;">🔥 ${m.kcal} kcal &bull; <span style="color:#60a5fa;">🥩 ${m.protein}g B</span> &bull; <span style="color:#f59e0b;">🌾 ${m.carbs || 0}g W</span> &bull; <span style="color:#ef4444;">🥑 ${m.fats || 0}g T</span></span>
                 </div>
                 <button onclick="deleteMeal('${m.id}')" class="item-delete">✕</button>
             </li>
@@ -330,6 +356,8 @@ function renderMealsList() {
     
     document.getElementById('totalKcal').textContent = totalKcal;
     document.getElementById('totalProtein').textContent = totalProtein;
+    document.getElementById('totalCarbs').textContent = totalCarbs;
+    document.getElementById('totalFats').textContent = totalFats;
     listDiv.innerHTML = html;
 }
 
