@@ -125,19 +125,56 @@ function renderTabContent() {
     if (state.activeTab === 'bmi') {
         contentDiv.innerHTML = `
             <div class="bmi-calculator" style="animation: fadeIn 0.3s ease-out;">
-                <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1rem;">Kalkulator BMI</h2>
-                <div class="input-group">
-                    <label for="height">Wzrost (cm)</label>
-                    <input type="number" id="height" placeholder="np. 180" min="50" max="250">
+                <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1rem;">Kalkulator BMI i Kalorii</h2>
+                
+                <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+                    <div style="flex:1;">
+                        <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Płeć</label>
+                        <select id="gender" style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit;">
+                            <option value="male">Mężczyzna</option>
+                            <option value="female">Kobieta</option>
+                        </select>
+                    </div>
+                    <div style="flex:1;">
+                        <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Wiek</label>
+                        <input type="number" id="age" placeholder="np. 25" min="10" max="100" style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
+                    </div>
                 </div>
-                <div class="input-group">
-                    <label for="weight">Waga (kg)</label>
-                    <input type="number" id="weight" placeholder="np. 75" min="20" max="300" step="0.1">
+
+                <div style="display:flex; gap:0.5rem; margin-bottom:1.25rem;">
+                    <div style="flex:1;">
+                        <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Wzrost (cm)</label>
+                        <input type="number" id="height" placeholder="np. 180" min="50" max="250" style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
+                    </div>
+                    <div style="flex:1;">
+                        <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Waga (kg)</label>
+                        <input type="number" id="weight" placeholder="np. 75" min="20" max="300" step="0.1" style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
+                    </div>
                 </div>
-                <button id="calcBmiBtn" class="btn-primary">Oblicz BMI</button>
-                <div id="bmiResult" class="bmi-result hide">
+                
+                <button id="calcBmiBtn" class="btn-primary">Oblicz BMI i Kalorie</button>
+                
+                <div id="bmiResult" class="bmi-result hide" style="margin-top: 1.5rem;">
                     <div id="bmiValue" class="bmi-value">--</div>
                     <div id="bmiStatus" class="bmi-status">--</div>
+                    
+                    <hr style="border:0; border-top: 1px solid var(--glass-border); margin: 1.5rem 0;">
+                    
+                    <h3 style="font-size: 1.1rem; margin-top:0; color:var(--text-color);">Zapotrzebowanie Kaloryczne</h3>
+                    <div style="display:flex; flex-direction:column; gap:0.5rem; text-align:left; font-size:0.9rem; padding: 0.5rem;">
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="color:var(--text-muted);">Redukcja (Chudnięcie):</span>
+                            <strong id="calLose" style="color:#f59e0b;">-- kcal</strong>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="color:var(--text-muted);">Utrzymanie wagi:</span>
+                            <strong id="calMaintain" style="color:#10b981;">-- kcal</strong>
+                        </div>
+                        <div style="display:flex; justify-content:space-between; align-items:center;">
+                            <span style="color:var(--text-muted);">Budowa masy (Tycie):</span>
+                            <strong id="calGain" style="color:#60a5fa;">-- kcal</strong>
+                        </div>
+                    </div>
                 </div>
             </div>
         `;
@@ -232,21 +269,24 @@ function renderTabContent() {
 }
 
 function calculateBMI() {
+    const age = parseInt(document.getElementById('age').value);
+    const gender = document.getElementById('gender').value;
     const height = parseFloat(document.getElementById('height').value);
     const weight = parseFloat(document.getElementById('weight').value);
+    
     const resultDiv = document.getElementById('bmiResult');
     const valueDiv = document.getElementById('bmiValue');
     const statusDiv = document.getElementById('bmiStatus');
 
-    if (!height || !weight || height <= 0 || weight <= 0) {
-        alert("Proszę podać prawidłowe wartości wagi i wzrostu.");
+    if (!height || !weight || !age || height <= 0 || weight <= 0 || age <= 0) {
+        alert("Proszę podać prawidłowe i pełne wartości wieku, wagi i wzrostu.");
         return;
     }
 
+    // 1. BMI Calculation
     const heightInMeters = height / 100;
     const bmi = (weight / (heightInMeters * heightInMeters)).toFixed(1);
 
-    resultDiv.classList.remove('hide');
     valueDiv.textContent = bmi;
 
     let status = '';
@@ -280,6 +320,25 @@ function calculateBMI() {
 
     statusDiv.textContent = status;
     statusDiv.className = `bmi-status ${colorClass}`;
+    
+    // 2. TDEE Calculation (Mifflin-St Jeor, zakladajac srednia aktywnosc x 1.35)
+    let bmr = 0;
+    if (gender === 'male') {
+        bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
+    } else {
+        bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
+    }
+    
+    // Zapotrzebowanie (okolo)
+    const maintenance = Math.round(bmr * 1.35);
+    const loss = maintenance - 500;
+    const gain = maintenance + 500;
+    
+    document.getElementById('calLose').textContent = loss + ' kcal';
+    document.getElementById('calMaintain').textContent = maintenance + ' kcal';
+    document.getElementById('calGain').textContent = gain + ' kcal';
+    
+    resultDiv.classList.remove('hide');
 }
 
 function handleAddExercise(e) {
