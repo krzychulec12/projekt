@@ -202,10 +202,27 @@ function renderTabContent() {
         renderExercisesList();
     }
     else if (state.activeTab === 'meals') {
+        const today = new Date().toISOString().split('T')[0];
         contentDiv.innerHTML = `
             <div class="meal-logger" style="animation: fadeIn 0.3s ease-out;">
                 <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1rem;">Baza Posiłków</h2>
                 <form id="mealForm">
+                    <div style="display:flex; gap:0.5rem; margin-bottom: 0.75rem;">
+                        <div style="flex:1;">
+                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Data</label>
+                            <input type="date" id="mealDate" value="${today}" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit;">
+                        </div>
+                        <div style="flex:1;">
+                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Pora posiłku</label>
+                            <select id="mealType" style="width:100%; border-radius:0.5rem; padding:0.75rem 0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit;">
+                                <option value="Śniadanie">Śniadanie</option>
+                                <option value="II Śniadanie">II Śniadanie</option>
+                                <option value="Obiad">Obiad</option>
+                                <option value="Przekąska">Przekąska</option>
+                                <option value="Kolacja">Kolacja</option>
+                            </select>
+                        </div>
+                    </div>
                     <div class="input-group" style="margin-bottom:0.75rem;">
                         <label for="mealName">Nazwa posiłku</label>
                         <input type="text" id="mealName" placeholder="np. Owsianka z białkiem" required autocomplete="off">
@@ -389,6 +406,8 @@ window.deleteExercise = function(id) {
 
 function handleAddMeal(e) {
     e.preventDefault();
+    const dateInput = document.getElementById('mealDate');
+    const typeInput = document.getElementById('mealType');
     const nameInput = document.getElementById('mealName');
     const kcalInput = document.getElementById('mealKcal');
     const proteinInput = document.getElementById('mealProtein');
@@ -397,6 +416,8 @@ function handleAddMeal(e) {
     
     meals.push({
         id: Date.now().toString(),
+        date: dateInput.value,
+        type: typeInput.value,
         name: nameInput.value.trim(),
         kcal: Math.max(0, parseInt(kcalInput.value) || 0),
         protein: Math.max(0, parseInt(proteinInput.value) || 0),
@@ -436,13 +457,17 @@ function renderMealsList() {
         totalCarbs += m.carbs || 0;
         totalFats += m.fats || 0;
         
+        const mDate = m.date || '—';
+        const mType = m.type || '';
+        
         html += `
-            <li class="list-item">
-                <div class="item-info">
-                    <strong>${m.name}</strong>
-                    <span class="item-details" style="color:#10b981;">🔥 ${m.kcal} kcal &bull; <span style="color:#60a5fa;">🥩 ${m.protein}g B</span> &bull; <span style="color:#f59e0b;">🌾 ${m.carbs || 0}g W</span> &bull; <span style="color:#ef4444;">🥑 ${m.fats || 0}g T</span></span>
+            <li class="list-item" style="position:relative;">
+                <div class="item-info" style="width: 100%;">
+                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.25rem;">🗓️ ${mDate} &bull; ⏳ ${mType}</div>
+                    <strong style="font-size:1rem;">${m.name}</strong>
+                    <div class="item-details" style="color:#10b981; margin-top:0.35rem;">🔥 ${m.kcal} kcal &bull; <span style="color:#60a5fa;">🥩 ${m.protein}g B</span> &bull; <span style="color:#f59e0b;">🌾 ${m.carbs || 0}g W</span> &bull; <span style="color:#ef4444;">🥑 ${m.fats || 0}g T</span></div>
                 </div>
-                <button onclick="deleteMeal('${m.id}')" class="item-delete">✕</button>
+                <button onclick="deleteMeal('${m.id}')" class="item-delete" style="position:absolute; top:0.75rem; right:0.75rem;">✕</button>
             </li>
         `;
     });
