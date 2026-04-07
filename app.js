@@ -160,21 +160,21 @@ function renderTabContent() {
                     <div style="display:flex; gap:0.5rem; margin-bottom: 0.75rem;">
                         <div style="flex:1;">
                             <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Kcal</label>
-                            <input type="number" id="mealKcal" placeholder="450" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
+                            <input type="number" id="mealKcal" placeholder="450" min="0" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
                         </div>
                         <div style="flex:1;">
                             <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Białko (g)</label>
-                            <input type="number" id="mealProtein" placeholder="30" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
+                            <input type="number" id="mealProtein" placeholder="30" min="0" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
                         </div>
                     </div>
                     <div style="display:flex; gap:0.5rem; margin-bottom: 1.25rem;">
                         <div style="flex:1;">
                             <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Węgle (g)</label>
-                            <input type="number" id="mealCarbs" placeholder="50" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
+                            <input type="number" id="mealCarbs" placeholder="50" min="0" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
                         </div>
                         <div style="flex:1;">
                             <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Tłuszcz (g)</label>
-                            <input type="number" id="mealFats" placeholder="15" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
+                            <input type="number" id="mealFats" placeholder="15" min="0" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
                         </div>
                     </div>
                     <button type="submit" class="btn-primary" style="background:linear-gradient(to right, #10b981, #059669);">Dodaj Posiłek</button>
@@ -304,10 +304,10 @@ function handleAddMeal(e) {
     meals.push({
         id: Date.now().toString(),
         name: nameInput.value.trim(),
-        kcal: parseInt(kcalInput.value) || 0,
-        protein: parseInt(proteinInput.value) || 0,
-        carbs: parseInt(carbsInput.value) || 0,
-        fats: parseInt(fatsInput.value) || 0
+        kcal: Math.max(0, parseInt(kcalInput.value) || 0),
+        protein: Math.max(0, parseInt(proteinInput.value) || 0),
+        carbs: Math.max(0, parseInt(carbsInput.value) || 0),
+        fats: Math.max(0, parseInt(fatsInput.value) || 0)
     });
     saveData();
     
