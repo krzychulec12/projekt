@@ -6,13 +6,24 @@ let state = {
 };
 let exercises = [];
 let meals = [];
-let notes = '';
+let notes = [];
 
 function loadData() {
     if (state.username) {
         exercises = JSON.parse(localStorage.getItem(`fitness_exercises_${state.username}`)) || [];
         meals = JSON.parse(localStorage.getItem(`fitness_meals_${state.username}`)) || [];
-        notes = localStorage.getItem(`fitness_notes_${state.username}`) || '';
+        
+        const loadedNotes = localStorage.getItem(`fitness_notes_${state.username}`);
+        if (loadedNotes) {
+            try {
+                const parsed = JSON.parse(loadedNotes);
+                notes = Array.isArray(parsed) ? parsed : [];
+            } catch(e) {
+                notes = [];
+            }
+        } else {
+            notes = [];
+        }
     }
 }
 
@@ -20,7 +31,7 @@ function saveData() {
     if (state.username) {
         localStorage.setItem(`fitness_exercises_${state.username}`, JSON.stringify(exercises));
         localStorage.setItem(`fitness_meals_${state.username}`, JSON.stringify(meals));
-        localStorage.setItem(`fitness_notes_${state.username}`, notes);
+        localStorage.setItem(`fitness_notes_${state.username}`, JSON.stringify(notes));
     }
 }
 
@@ -78,7 +89,7 @@ window.logout = function() {
     state.username = '';
     exercises = [];
     meals = [];
-    notes = '';
+    notes = [];
     renderMain();
 }
 
@@ -203,20 +214,20 @@ function renderTabContent() {
         contentDiv.innerHTML = `
             <div class="notes-logger" style="animation: fadeIn 0.3s ease-out;">
                 <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1rem;">Złote myśli i plany</h2>
-                <div class="input-group">
-                    <textarea id="valNotes" placeholder="Zapisz swoje przemyślenia, plan treningu na jutro..." style="width:100%; height:200px; resize:vertical; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit;">${notes}</textarea>
+                <form id="noteForm">
+                    <div class="input-group">
+                        <textarea id="valNotes" placeholder="Nowa notatka, np. plan na klatkę piersiową..." required style="width:100%; height:80px; resize:vertical; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit;"></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary" style="background:linear-gradient(to right, #ec4899, #db2777);">Dodaj Notatkę</button>
+                </form>
+                
+                <div class="notes-grid" id="notesList" style="margin-top: 1.5rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem;">
+                    <!-- Notatki -->
                 </div>
-                <button id="saveNotesBtn" class="btn-primary" style="background:linear-gradient(to right, #ec4899, #db2777);">Zapisz Notatnik</button>
-                <div id="notesStatus" style="text-align:center; margin-top:1rem; font-size:0.875rem; color:#10b981; opacity:0; transition:opacity 0.3s;">Zapisano pomyślnie!</div>
             </div>
         `;
-        document.getElementById('saveNotesBtn').addEventListener('click', () => {
-            notes = document.getElementById('valNotes').value;
-            saveData();
-            const statusNode = document.getElementById('notesStatus');
-            statusNode.style.opacity = '1';
-            setTimeout(() => { statusNode.style.opacity = '0'; }, 2000);
-        });
+        document.getElementById('noteForm').addEventListener('submit', handleAddNote);
+        renderNotesList();
     }
 }
 
@@ -389,6 +400,48 @@ window.deleteMeal = function(id) {
     meals = meals.filter(m => m.id !== id);
     saveData();
     renderMealsList();
+}
+
+function handleAddNote(e) {
+    e.preventDefault();
+    const input = document.getElementById('valNotes');
+    
+    notes.push({
+        id: Date.now().toString(),
+        content: input.value.trim(),
+        date: new Date().toLocaleDateString()
+    });
+    
+    saveData();
+    input.value = '';
+    renderNotesList();
+}
+
+function renderNotesList() {
+    const listDiv = document.getElementById('notesList');
+    if (notes.length === 0) {
+        listDiv.innerHTML = '<p style="text-align:center; grid-column: 1 / -1; color: var(--text-muted); font-size: 0.875rem; margin-top:0.5rem;">Brak zapisanych notatek.</p>';
+        return;
+    }
+    
+    let html = '';
+    notes.forEach(n => {
+        html += `
+            <div class="note-card" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.5rem; padding: 0.75rem; position: relative; display: flex; flex-direction: column;">
+                <button onclick="deleteNote('${n.id}')" style="position: absolute; top: 0.5rem; right: 0.5rem; background: transparent; border: none; color: var(--danger); font-size: 1rem; cursor: pointer; opacity: 0.7; padding: 0;">✕</button>
+                <div style="font-size: 0.65rem; color: var(--text-muted); margin-bottom: 0.5rem;">${n.date}</div>
+                <div style="font-size: 0.85rem; white-space: pre-wrap; word-wrap: break-word; flex:1; color: var(--text-color);">${n.content}</div>
+            </div>
+        `;
+    });
+    
+    listDiv.innerHTML = html;
+}
+
+window.deleteNote = function(id) {
+    notes = notes.filter(n => n.id !== id);
+    saveData();
+    renderNotesList();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
