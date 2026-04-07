@@ -7,11 +7,13 @@ let state = {
 let exercises = [];
 let meals = [];
 let notes = [];
+let progressData = [];
 
 function loadData() {
     if (state.username) {
         exercises = JSON.parse(localStorage.getItem(`fitness_exercises_${state.username}`)) || [];
         meals = JSON.parse(localStorage.getItem(`fitness_meals_${state.username}`)) || [];
+        progressData = JSON.parse(localStorage.getItem(`fitness_progress_${state.username}`)) || [];
         
         const loadedNotes = localStorage.getItem(`fitness_notes_${state.username}`);
         if (loadedNotes) {
@@ -32,6 +34,11 @@ function saveData() {
         localStorage.setItem(`fitness_exercises_${state.username}`, JSON.stringify(exercises));
         localStorage.setItem(`fitness_meals_${state.username}`, JSON.stringify(meals));
         localStorage.setItem(`fitness_notes_${state.username}`, JSON.stringify(notes));
+        try {
+            localStorage.setItem(`fitness_progress_${state.username}`, JSON.stringify(progressData));
+        } catch(e) {
+            alert('Brak miejsca w pamięci przeglądarki na nowe dane wejściowe/zdjęcia!');
+        }
     }
 }
 
@@ -90,6 +97,7 @@ window.logout = function() {
     exercises = [];
     meals = [];
     notes = [];
+    progressData = [];
     renderMain();
 }
 
@@ -105,11 +113,12 @@ function renderDashboard() {
             <h1 style="text-align: left; margin-top: 0; font-size:1.5rem;">Cześć, ${state.username}!</h1>
             <p class="subtitle" style="text-align: left; margin-bottom: 1.5rem;">Twój panel fitness</p>
             
-            <div class="tabs">
+            <div class="tabs" style="flex-wrap: wrap;">
                 <button class="tab-btn ${state.activeTab === 'bmi' ? 'active' : ''}" onclick="switchTab('bmi')">BMI</button>
                 <button class="tab-btn ${state.activeTab === 'exercises' ? 'active' : ''}" onclick="switchTab('exercises')">Ćwiczenia</button>
                 <button class="tab-btn ${state.activeTab === 'meals' ? 'active' : ''}" onclick="switchTab('meals')">Posiłki</button>
                 <button class="tab-btn ${state.activeTab === 'notes' ? 'active' : ''}" onclick="switchTab('notes')">Notatki</button>
+                <button class="tab-btn ${state.activeTab === 'progress' ? 'active' : ''}" onclick="switchTab('progress')">Progres</button>
             </div>
             
             <div id="tabContent"></div>
@@ -282,6 +291,38 @@ function renderTabContent() {
         `;
         document.getElementById('noteForm').addEventListener('submit', handleAddNote);
         renderNotesList();
+    }
+    else if (state.activeTab === 'progress') {
+        const today = new Date().toISOString().split('T')[0];
+        contentDiv.innerHTML = `
+            <div class="progress-logger" style="animation: fadeIn 0.3s ease-out;">
+                <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1rem;">Śledzenie Postępów</h2>
+                <form id="progressForm">
+                    <div style="display:flex; gap:0.5rem; margin-bottom: 0.75rem;">
+                        <div style="flex:1;">
+                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Data wpisu</label>
+                            <input type="date" id="progDate" value="${today}" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit;">
+                        </div>
+                        <div style="flex:1;">
+                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Waga (kg)</label>
+                            <input type="number" id="progWeight" placeholder="np. 70" step="0.1" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit;">
+                        </div>
+                    </div>
+                    <div class="input-group" style="margin-bottom:1rem;">
+                        <label for="progPhoto">Dodaj zdjęcie sylwetki <span style="font-size:0.7rem;color:var(--text-muted);">(opcjonalne)</span></label>
+                        <input type="file" id="progPhoto" accept="image/*" style="width:100%; border-radius:0.5rem; padding:0.75rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit; font-size: 0.8rem;">
+                    </div>
+                    <button type="submit" class="btn-primary" style="background:linear-gradient(to right, #f59e0b, #ea580c);">Zapisz Pomiar</button>
+                    <div id="progStatus" style="text-align:center; margin-top:0.5rem; font-size:0.75rem; color:var(--text-muted);"></div>
+                </form>
+
+                <div class="progress-grid" id="progressList" style="margin-top: 1.5rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 1rem;">
+                    <!-- Postępy -->
+                </div>
+            </div>
+        `;
+        document.getElementById('progressForm').addEventListener('submit', handleAddProgress);
+        renderProgressList();
     }
 }
 
@@ -526,6 +567,97 @@ window.deleteNote = function(id) {
     notes = notes.filter(n => n.id !== id);
     saveData();
     renderNotesList();
+}
+
+function handleAddProgress(e) {
+    e.preventDefault();
+    const dateInput = document.getElementById('progDate');
+    const weightInput = document.getElementById('progWeight');
+    const photoInput = document.getElementById('progPhoto');
+    const statusDiv = document.getElementById('progStatus');
+    
+    statusDiv.textContent = 'Trwa miniaturyzacja i zapisywanie...';
+    
+    const weightVal = parseFloat(weightInput.value);
+    const dateVal = dateInput.value;
+    const file = photoInput.files[0];
+    
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(evt) {
+            const img = new Image();
+            img.onload = function() {
+                const canvas = document.createElement('canvas');
+                const MAX_WIDTH = 300;
+                let scale = 1;
+                if (img.width > MAX_WIDTH) {
+                    scale = MAX_WIDTH / img.width;
+                }
+                canvas.width = img.width * scale;
+                canvas.height = img.height * scale;
+                
+                const ctx = canvas.getContext('2d');
+                ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                
+                const base64Photo = canvas.toDataURL('image/jpeg', 0.6);
+                saveProgressItem(dateVal, weightVal, base64Photo);
+            }
+            img.src = evt.target.result;
+        }
+        reader.readAsDataURL(file);
+    } else {
+        saveProgressItem(dateVal, weightVal, '');
+    }
+}
+
+function saveProgressItem(date, weight, photoString) {
+    progressData.push({
+        id: Date.now().toString(),
+        date: date,
+        weight: weight,
+        photo: photoString
+    });
+    
+    progressData.sort((a, b) => new Date(b.date) - new Date(a.date));
+    
+    saveData();
+    document.getElementById('progStatus').textContent = '';
+    renderProgressList();
+}
+
+function renderProgressList() {
+    const listDiv = document.getElementById('progressList');
+    if (progressData.length === 0) {
+        listDiv.innerHTML = '<p style="text-align:center; grid-column: 1 / -1; color: var(--text-muted); font-size: 0.875rem; margin-top:0.5rem;">Brak postępów.</p>';
+        return;
+    }
+    
+    let html = '';
+    progressData.forEach(p => {
+        let photoHtml = '';
+        if (p.photo) {
+            photoHtml = `<img src="${p.photo}" style="width:100%; height:120px; object-fit:cover; border-radius:0.5rem; margin-bottom:0.5rem; border:1px solid rgba(255,255,255,0.1);">`;
+        } else {
+            photoHtml = `<div style="width:100%; height:120px; background:rgba(0,0,0,0.2); border-radius:0.5rem; display:flex; align-items:center; justify-content:center; color:var(--text-muted); margin-bottom:0.5rem; font-size: 0.75rem;">Brak zdjęcia</div>`;
+        }
+        
+        html += `
+            <div class="progress-card" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 0.5rem; padding: 0.75rem; position: relative;">
+                <button onclick="deleteProgress('${p.id}')" style="position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(0,0,0,0.7); border: none; color: white; width:22px; height:22px; border-radius: 50%; font-size: 0.75rem; cursor: pointer; display:flex; align-items:center; justify-content:center;">✕</button>
+                ${photoHtml}
+                <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">${p.date}</div>
+                <div style="font-size: 1.1rem; font-weight:bold; color: var(--text-color);">${p.weight} kg</div>
+            </div>
+        `;
+    });
+    
+    listDiv.innerHTML = html;
+}
+
+window.deleteProgress = function(id) {
+    progressData = progressData.filter(p => p.id !== id);
+    saveData();
+    renderProgressList();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
