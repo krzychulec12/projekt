@@ -530,49 +530,37 @@ function renderMealsList() {
     document.getElementById('totalProtein').textContent = totalProtein;
     document.getElementById('totalCarbs').textContent = totalCarbs;
     document.getElementById('totalFats').textContent = totalFats;
-    // Dodatek na Wypitą Wodę + Wykres
-    let todayDate = new Date().toISOString().split('T')[0];
-    let currentWater = waterData[todayDate] || 0;
-    
-    html = `
-        <div style="background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.4); border-radius: 0.5rem; padding: 1rem; margin-top: 1.5rem; text-align: center;">
-            <h3 style="font-size: 1.1rem; color: #38bdf8; margin-top: 0; margin-bottom: 0.5rem;">Asystent Nawodnienia 💧</h3>
-            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Wypito dzisiaj: <strong style="color:white; font-size:1rem;">${currentWater} ml</strong></p>
-            <div style="display:flex; justify-content:center; gap:0.5rem;">
-                <button onclick="addWater(-250)" style="background:rgba(255,255,255,0.1); color:white; border:1px solid rgba(255,255,255,0.2); border-radius:0.5rem; padding:0.5rem 1rem; cursor:pointer;">-250 ml</button>
-                <button onclick="addWater(250)" class="btn-primary" style="background:linear-gradient(to right, #0ea5e9, #0284c7); padding:0.5rem 1.5rem;">Wypij +250 ml</button>
-            </div>
-        </div>
-        
-        <div style="margin-top: 2rem;">
-            <h3 style="font-size: 1rem; color:var(--text-color); margin-bottom: 0.5rem; text-align:center;">Bilans Makro Zjedzonych Posiłków</h3>
-            <div style="height:250px; width:100%;"><canvas id="macroChart"></canvas></div>
-        </div>
-    ` + html;
     
     listDiv.innerHTML = html;
     
-    // Rysowanie Chart.js po wklejeniu HTML DOM
-    if (totalKcal > 0) {
-        setTimeout(() => {
-            const ctx = document.getElementById('macroChart')?.getContext('2d');
-            if (ctx) {
-                if (window.macroChartInstance) window.macroChartInstance.destroy();
-                window.macroChartInstance = new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Białko (g)', 'Węglowodany (g)', 'Tłuszcze (g)'],
-                        datasets: [{
-                            data: [totalProtein, totalCarbs, totalFats],
-                            backgroundColor: ['#3b82f6', '#f59e0b', '#ef4444'],
-                            borderWidth: 0,
-                            hoverOffset: 4
-                        }]
-                    },
-                    options: { maintainAspectRatio: false, plugins: { legend: { labels: { color:'white' } } } }
-                });
-            }
-        }, 50);
+    // Update Water Text
+    let todayDate = new Date().toISOString().split('T')[0];
+    let currentWater = waterData[todayDate] || 0;
+    const waterElement = document.getElementById('waterCount');
+    if (waterElement) waterElement.textContent = `${currentWater} ml`;
+    
+    // Update Chart.js (re-draw smoothly)
+    const ctx = document.getElementById('macroChart')?.getContext('2d');
+    if (ctx) {
+        if (totalKcal > 0) {
+            if (window.macroChartInstance) window.macroChartInstance.destroy();
+            window.macroChartInstance = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Białko', 'Węgle', 'Tłuszcze'],
+                    datasets: [{
+                        data: [totalProtein, totalCarbs, totalFats],
+                        backgroundColor: ['#3b82f6', '#f59e0b', '#ef4444'],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: { maintainAspectRatio: false, plugins: { legend: { labels: { color:'rgba(255,255,255,0.8)', boxWidth: 12, padding: 8 } } } }
+            });
+        } else {
+            // No meals, clear chart if exists
+            if (window.macroChartInstance) window.macroChartInstance.destroy();
+        }
     }
 }
 
