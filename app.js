@@ -212,6 +212,8 @@ function renderTabContent() {
     }
     else if (state.activeTab === 'meals') {
         const today = new Date().toISOString().split('T')[0];
+        const now = new Date();
+        const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
         contentDiv.innerHTML = `
             <div class="meal-logger" style="animation: fadeIn 0.3s ease-out;">
                 <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1rem;">Baza Posiłków</h2>
@@ -219,11 +221,15 @@ function renderTabContent() {
                     <div style="display:flex; gap:0.5rem; margin-bottom: 0.75rem;">
                         <div style="flex:1;">
                             <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Data</label>
-                            <input type="date" id="mealDate" value="${today}" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit;">
+                            <input type="date" id="mealDate" value="${today}" required style="width:100%; border-radius:0.5rem; padding:0.75rem 0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit; font-size:0.8rem;">
                         </div>
                         <div style="flex:1;">
-                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Pora posiłku</label>
-                            <select id="mealType" style="width:100%; border-radius:0.5rem; padding:0.75rem 0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit;">
+                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Godz.</label>
+                            <input type="time" id="mealTime" value="${timeStr}" required style="width:100%; border-radius:0.5rem; padding:0.75rem 0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit; font-size:0.8rem;">
+                        </div>
+                        <div style="flex:1;">
+                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Typ</label>
+                            <select id="mealType" style="width:100%; border-radius:0.5rem; padding:0.75rem 0.25rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit; font-size:0.8rem;">
                                 <option value="Śniadanie">Śniadanie</option>
                                 <option value="II Śniadanie">II Śniadanie</option>
                                 <option value="Obiad">Obiad</option>
@@ -448,6 +454,7 @@ window.deleteExercise = function(id) {
 function handleAddMeal(e) {
     e.preventDefault();
     const dateInput = document.getElementById('mealDate');
+    const timeInput = document.getElementById('mealTime');
     const typeInput = document.getElementById('mealType');
     const nameInput = document.getElementById('mealName');
     const kcalInput = document.getElementById('mealKcal');
@@ -458,6 +465,7 @@ function handleAddMeal(e) {
     meals.push({
         id: Date.now().toString(),
         date: dateInput.value,
+        time: timeInput.value,
         type: typeInput.value,
         name: nameInput.value.trim(),
         kcal: Math.max(0, parseInt(kcalInput.value) || 0),
@@ -499,12 +507,13 @@ function renderMealsList() {
         totalFats += m.fats || 0;
         
         const mDate = m.date || '—';
+        const mTime = m.time || '';
         const mType = m.type || '';
         
         html += `
             <li class="list-item" style="position:relative;">
                 <div class="item-info" style="width: 100%;">
-                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.25rem;">🗓️ ${mDate} &bull; ⏳ ${mType}</div>
+                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.25rem;">🗓️ ${mDate} ${mTime ? '⏰ '+mTime : ''} &bull; ⏳ ${mType}</div>
                     <strong style="font-size:1rem;">${m.name}</strong>
                     <div class="item-details" style="color:#10b981; margin-top:0.35rem;">🔥 ${m.kcal} kcal &bull; <span style="color:#60a5fa;">🥩 ${m.protein}g B</span> &bull; <span style="color:#f59e0b;">🌾 ${m.carbs || 0}g W</span> &bull; <span style="color:#ef4444;">🥑 ${m.fats || 0}g T</span></div>
                 </div>
