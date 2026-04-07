@@ -6,11 +6,13 @@ let state = {
 };
 let exercises = [];
 let meals = [];
+let notes = '';
 
 function loadData() {
     if (state.username) {
         exercises = JSON.parse(localStorage.getItem(`fitness_exercises_${state.username}`)) || [];
         meals = JSON.parse(localStorage.getItem(`fitness_meals_${state.username}`)) || [];
+        notes = localStorage.getItem(`fitness_notes_${state.username}`) || '';
     }
 }
 
@@ -18,6 +20,7 @@ function saveData() {
     if (state.username) {
         localStorage.setItem(`fitness_exercises_${state.username}`, JSON.stringify(exercises));
         localStorage.setItem(`fitness_meals_${state.username}`, JSON.stringify(meals));
+        localStorage.setItem(`fitness_notes_${state.username}`, notes);
     }
 }
 
@@ -75,6 +78,7 @@ window.logout = function() {
     state.username = '';
     exercises = [];
     meals = [];
+    notes = '';
     renderMain();
 }
 
@@ -91,9 +95,10 @@ function renderDashboard() {
             <p class="subtitle" style="text-align: left; margin-bottom: 1.5rem;">Twój panel fitness</p>
             
             <div class="tabs">
-                <button class="tab-btn ${state.activeTab === 'bmi' ? 'active' : ''}" onclick="switchTab('bmi')">Kalk. BMI</button>
+                <button class="tab-btn ${state.activeTab === 'bmi' ? 'active' : ''}" onclick="switchTab('bmi')">BMI</button>
                 <button class="tab-btn ${state.activeTab === 'exercises' ? 'active' : ''}" onclick="switchTab('exercises')">Ćwiczenia</button>
-                <button class="tab-btn ${state.activeTab === 'meals' ? 'active' : ''}" onclick="switchTab('meals')">Posiłki (Makro)</button>
+                <button class="tab-btn ${state.activeTab === 'meals' ? 'active' : ''}" onclick="switchTab('meals')">Posiłki</button>
+                <button class="tab-btn ${state.activeTab === 'notes' ? 'active' : ''}" onclick="switchTab('notes')">Notatki</button>
             </div>
             
             <div id="tabContent"></div>
@@ -193,6 +198,25 @@ function renderTabContent() {
         `;
         document.getElementById('mealForm').addEventListener('submit', handleAddMeal);
         renderMealsList();
+    }
+    else if (state.activeTab === 'notes') {
+        contentDiv.innerHTML = `
+            <div class="notes-logger" style="animation: fadeIn 0.3s ease-out;">
+                <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1rem;">Złote myśli i plany</h2>
+                <div class="input-group">
+                    <textarea id="valNotes" placeholder="Zapisz swoje przemyślenia, plan treningu na jutro..." style="width:100%; height:200px; resize:vertical; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit;">${notes}</textarea>
+                </div>
+                <button id="saveNotesBtn" class="btn-primary" style="background:linear-gradient(to right, #ec4899, #db2777);">Zapisz Notatnik</button>
+                <div id="notesStatus" style="text-align:center; margin-top:1rem; font-size:0.875rem; color:#10b981; opacity:0; transition:opacity 0.3s;">Zapisano pomyślnie!</div>
+            </div>
+        `;
+        document.getElementById('saveNotesBtn').addEventListener('click', () => {
+            notes = document.getElementById('valNotes').value;
+            saveData();
+            const statusNode = document.getElementById('notesStatus');
+            statusNode.style.opacity = '1';
+            setTimeout(() => { statusNode.style.opacity = '0'; }, 2000);
+        });
     }
 }
 
