@@ -516,22 +516,56 @@ function renderMealsList() {
     let totalCarbs = 0;
     let totalFats = 0;
     
-    if (meals.length === 0) {
-        listDiv.innerHTML = '<p style="text-align:center; color: var(--text-muted); font-size: 0.875rem; margin-top:1rem;">Brak zapisanych posiłków.</p>';
-        document.getElementById('totalKcal').textContent = '0';
-        document.getElementById('totalProtein').textContent = '0';
-        document.getElementById('totalCarbs').textContent = '0';
-        document.getElementById('totalFats').textContent = '0';
-        return;
-    }
-    
-    let html = '<ul style="list-style:none; padding:0; margin-top:1.5rem;">';
     meals.forEach(m => {
         totalKcal += m.kcal;
         totalProtein += m.protein;
         totalCarbs += m.carbs || 0;
         totalFats += m.fats || 0;
-        
+    });
+    
+    document.getElementById('totalKcal').textContent = totalKcal;
+    document.getElementById('totalProtein').textContent = totalProtein;
+    document.getElementById('totalCarbs').textContent = totalCarbs;
+    document.getElementById('totalFats').textContent = totalFats;
+    
+    // Update Water Text Always
+    let todayDate = new Date().toISOString().split('T')[0];
+    let currentWater = waterData[todayDate] || 0;
+    const waterElement = document.getElementById('waterCount');
+    if (waterElement) waterElement.textContent = `${currentWater} ml`;
+    
+    // Update Chart.js Always with a tiny delay so DOM settles
+    setTimeout(() => {
+        const ctx = document.getElementById('macroChart')?.getContext('2d');
+        if (ctx) {
+            if (totalKcal > 0) {
+                if (window.macroChartInstance) window.macroChartInstance.destroy();
+                window.macroChartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Białko', 'Węgle', 'Tłuszcze'],
+                        datasets: [{
+                            data: [totalProtein, totalCarbs, totalFats],
+                            backgroundColor: ['#3b82f6', '#f59e0b', '#ef4444'],
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: { maintainAspectRatio: false, plugins: { legend: { labels: { color:'rgba(255,255,255,0.8)', boxWidth: 12, padding: 8 } } } }
+                });
+            } else {
+                if (window.macroChartInstance) window.macroChartInstance.destroy();
+            }
+        }
+    }, 50);
+
+    if (meals.length === 0) {
+        listDiv.innerHTML = '<p style="text-align:center; color: var(--text-muted); font-size: 0.875rem; margin-top:1rem;">Brak zapisanych posiłków.</p>';
+        return;
+    }
+    
+    let html = '<ul style="list-style:none; padding:0; margin-top:1.5rem;">';
+    meals.forEach(m => {
         const mDate = m.date || '—';
         const mTime = m.time || '';
         const mType = m.type || '';
@@ -549,42 +583,7 @@ function renderMealsList() {
     });
     html += '</ul>';
     
-    document.getElementById('totalKcal').textContent = totalKcal;
-    document.getElementById('totalProtein').textContent = totalProtein;
-    document.getElementById('totalCarbs').textContent = totalCarbs;
-    document.getElementById('totalFats').textContent = totalFats;
-    
     listDiv.innerHTML = html;
-    
-    // Update Water Text
-    let todayDate = new Date().toISOString().split('T')[0];
-    let currentWater = waterData[todayDate] || 0;
-    const waterElement = document.getElementById('waterCount');
-    if (waterElement) waterElement.textContent = `${currentWater} ml`;
-    
-    // Update Chart.js (re-draw smoothly)
-    const ctx = document.getElementById('macroChart')?.getContext('2d');
-    if (ctx) {
-        if (totalKcal > 0) {
-            if (window.macroChartInstance) window.macroChartInstance.destroy();
-            window.macroChartInstance = new Chart(ctx, {
-                type: 'doughnut',
-                data: {
-                    labels: ['Białko', 'Węgle', 'Tłuszcze'],
-                    datasets: [{
-                        data: [totalProtein, totalCarbs, totalFats],
-                        backgroundColor: ['#3b82f6', '#f59e0b', '#ef4444'],
-                        borderWidth: 0,
-                        hoverOffset: 4
-                    }]
-                },
-                options: { maintainAspectRatio: false, plugins: { legend: { labels: { color:'rgba(255,255,255,0.8)', boxWidth: 12, padding: 8 } } } }
-            });
-        } else {
-            // No meals, clear chart if exists
-            if (window.macroChartInstance) window.macroChartInstance.destroy();
-        }
-    }
 }
 
 window.addWater = function(amount) {
