@@ -3,10 +3,18 @@ let state = {
     isLoggedIn: false,
     username: ''
 };
-let exercises = JSON.parse(localStorage.getItem('fitness_exercises')) || [];
+let exercises = [];
+
+function loadExercises() {
+    if (state.username) {
+        exercises = JSON.parse(localStorage.getItem(`fitness_exercises_${state.username}`)) || [];
+    }
+}
 
 function saveExercises() {
-    localStorage.setItem('fitness_exercises', JSON.stringify(exercises));
+    if (state.username) {
+        localStorage.setItem(`fitness_exercises_${state.username}`, JSON.stringify(exercises));
+    }
 }
 
 function renderMain() {
@@ -52,13 +60,22 @@ function handleLoginSuccess(username) {
     setTimeout(() => {
         state.isLoggedIn = true;
         state.username = username;
+        loadExercises();
         renderMain();
     }, 300);
 }
 
+window.logout = function() {
+    state.isLoggedIn = false;
+    state.username = '';
+    exercises = [];
+    renderMain();
+}
+
 function renderDashboard() {
     app.innerHTML = `
-        <div class="glass-panel" style="animation: fadeIn 0.5s ease-out;">
+        <div class="glass-panel" style="animation: fadeIn 0.5s ease-out; position: relative;">
+            <button onclick="logout()" style="position:absolute; top:1rem; right:1rem; background:transparent; border:1px solid rgba(239, 68, 68, 0.5); color:var(--danger); padding:0.4rem 0.8rem; border-radius:0.5rem; cursor:pointer; transition:all 0.2s; font-size:0.75rem;">Wyloguj</button>
             <h1>Cześć, ${state.username}!</h1>
             <p class="subtitle">Twój osobisty panel fitness</p>
             
