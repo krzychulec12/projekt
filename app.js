@@ -147,17 +147,29 @@ function calculateBMI() {
     let status = '';
     let colorClass = '';
 
-    if (bmi < 18.5) {
+    if (bmi < 16) {
+        status = 'Wygłodzenie';
+        colorClass = 'text-danger';
+    } else if (bmi >= 16 && bmi < 17) {
+        status = 'Wychudzenie';
+        colorClass = 'text-warning';
+    } else if (bmi >= 17 && bmi < 18.5) {
         status = 'Niedowaga';
         colorClass = 'text-warning';
-    } else if (bmi >= 18.5 && bmi < 24.9) {
-        status = 'W normie';
+    } else if (bmi >= 18.5 && bmi < 25) {
+        status = 'Prawidłowa masa ciała (Norma)';
         colorClass = 'text-success';
-    } else if (bmi >= 25 && bmi < 29.9) {
+    } else if (bmi >= 25 && bmi < 30) {
         status = 'Nadwaga';
         colorClass = 'text-warning';
+    } else if (bmi >= 30 && bmi < 35) {
+        status = 'Otyłość I stopnia';
+        colorClass = 'text-danger';
+    } else if (bmi >= 35 && bmi < 40) {
+        status = 'Otyłość II stopnia';
+        colorClass = 'text-danger';
     } else {
-        status = 'Otyłość';
+        status = 'Otyłość III stopnia (skrajna)';
         colorClass = 'text-danger';
     }
 
