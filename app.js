@@ -8,12 +8,14 @@ let exercises = [];
 let meals = [];
 let notes = [];
 let progressData = [];
+let waterData = {};
 
 function loadData() {
     if (state.username) {
         exercises = JSON.parse(localStorage.getItem(`fitness_exercises_${state.username}`)) || [];
         meals = JSON.parse(localStorage.getItem(`fitness_meals_${state.username}`)) || [];
         progressData = JSON.parse(localStorage.getItem(`fitness_progress_${state.username}`)) || [];
+        waterData = JSON.parse(localStorage.getItem(`fitness_water_${state.username}`)) || {};
         
         const loadedNotes = localStorage.getItem(`fitness_notes_${state.username}`);
         if (loadedNotes) {
@@ -34,6 +36,7 @@ function saveData() {
         localStorage.setItem(`fitness_exercises_${state.username}`, JSON.stringify(exercises));
         localStorage.setItem(`fitness_meals_${state.username}`, JSON.stringify(meals));
         localStorage.setItem(`fitness_notes_${state.username}`, JSON.stringify(notes));
+        localStorage.setItem(`fitness_water_${state.username}`, JSON.stringify(waterData));
         try {
             localStorage.setItem(`fitness_progress_${state.username}`, JSON.stringify(progressData));
         } catch(e) {
@@ -527,7 +530,59 @@ function renderMealsList() {
     document.getElementById('totalProtein').textContent = totalProtein;
     document.getElementById('totalCarbs').textContent = totalCarbs;
     document.getElementById('totalFats').textContent = totalFats;
+    // Dodatek na Wypitą Wodę + Wykres
+    let todayDate = new Date().toISOString().split('T')[0];
+    let currentWater = waterData[todayDate] || 0;
+    
+    html = `
+        <div style="background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.4); border-radius: 0.5rem; padding: 1rem; margin-top: 1.5rem; text-align: center;">
+            <h3 style="font-size: 1.1rem; color: #38bdf8; margin-top: 0; margin-bottom: 0.5rem;">Asystent Nawodnienia 💧</h3>
+            <p style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 1rem;">Wypito dzisiaj: <strong style="color:white; font-size:1rem;">${currentWater} ml</strong></p>
+            <div style="display:flex; justify-content:center; gap:0.5rem;">
+                <button onclick="addWater(-250)" style="background:rgba(255,255,255,0.1); color:white; border:1px solid rgba(255,255,255,0.2); border-radius:0.5rem; padding:0.5rem 1rem; cursor:pointer;">-250 ml</button>
+                <button onclick="addWater(250)" class="btn-primary" style="background:linear-gradient(to right, #0ea5e9, #0284c7); padding:0.5rem 1.5rem;">Wypij +250 ml</button>
+            </div>
+        </div>
+        
+        <div style="margin-top: 2rem;">
+            <h3 style="font-size: 1rem; color:var(--text-color); margin-bottom: 0.5rem; text-align:center;">Bilans Makro Zjedzonych Posiłków</h3>
+            <div style="height:250px; width:100%;"><canvas id="macroChart"></canvas></div>
+        </div>
+    ` + html;
+    
     listDiv.innerHTML = html;
+    
+    // Rysowanie Chart.js po wklejeniu HTML DOM
+    if (totalKcal > 0) {
+        setTimeout(() => {
+            const ctx = document.getElementById('macroChart')?.getContext('2d');
+            if (ctx) {
+                if (window.macroChartInstance) window.macroChartInstance.destroy();
+                window.macroChartInstance = new Chart(ctx, {
+                    type: 'doughnut',
+                    data: {
+                        labels: ['Białko (g)', 'Węglowodany (g)', 'Tłuszcze (g)'],
+                        datasets: [{
+                            data: [totalProtein, totalCarbs, totalFats],
+                            backgroundColor: ['#3b82f6', '#f59e0b', '#ef4444'],
+                            borderWidth: 0,
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: { maintainAspectRatio: false, plugins: { legend: { labels: { color:'white' } } } }
+                });
+            }
+        }, 50);
+    }
+}
+
+window.addWater = function(amount) {
+    let todayDate = new Date().toISOString().split('T')[0];
+    if (!waterData[todayDate]) waterData[todayDate] = 0;
+    waterData[todayDate] += amount;
+    if (waterData[todayDate] < 0) waterData[todayDate] = 0;
+    saveData();
+    renderMealsList();
 }
 
 window.deleteMeal = function(id) {
@@ -660,7 +715,51 @@ function renderProgressList() {
         `;
     });
     
-    listDiv.innerHTML = html;
+    // Line Chart logic
+    let chartHtml = `
+        <div style="margin-bottom: 2rem; margin-top:1rem;">
+            <h3 style="font-size: 1rem; color:var(--text-color); margin-bottom: 0.5rem; text-align:center;">Historia Wagi</h3>
+            <div style="height:220px; width:100%;"><canvas id="weightChart"></canvas></div>
+        </div>
+    `;
+    
+    listDiv.innerHTML = chartHtml + html;
+    
+    setTimeout(() => {
+        const ctx = document.getElementById('weightChart')?.getContext('2d');
+        if (ctx && progressData.length > 0) {
+            if (window.weightChartInstance) window.weightChartInstance.destroy();
+            
+            const sortedData = [...progressData].sort((a,b) => new Date(a.date) - new Date(b.date));
+            const labels = sortedData.map(d => d.date);
+            const dataPts = sortedData.map(d => d.weight);
+            
+            window.weightChartInstance = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Waga (kg)',
+                        data: dataPts,
+                        borderColor: '#f59e0b',
+                        backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                        borderWidth: 3,
+                        pointBackgroundColor: '#ea580c',
+                        fill: true,
+                        tension: 0.3
+                    }]
+                },
+                options: {
+                    maintainAspectRatio: false,
+                    plugins: { legend: { labels: { color: 'white' } } },
+                    scales: {
+                        x: { ticks: { color: 'rgba(255,255,255,0.7)' }, grid: { color: 'rgba(255,255,255,0.1)' } },
+                        y: { ticks: { color: 'rgba(255,255,255,0.7)' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                    }
+                }
+            });
+        }
+    }, 50);
 }
 
 window.deleteProgress = function(id) {
