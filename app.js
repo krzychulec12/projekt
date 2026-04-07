@@ -228,7 +228,7 @@ function renderTabContent() {
                 <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
                     <div style="flex: 1; min-width: 140px; background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.4); border-radius: 0.5rem; padding: 1rem; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
                         <h3 style="font-size: 1rem; color: #38bdf8; margin-top: 0; margin-bottom: 0.25rem;">Woda 💧</h3>
-                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">Dzisiaj: <br><strong id="waterCount" style="color:white; font-size:1.1rem; display:inline-block; margin-top:0.25rem;">${currentWater} ml</strong></p>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">Dzisiaj: <br><strong id="waterCount" style="color:white; font-size:1.1rem; display:inline-block; margin-top:0.25rem;">${currentWater} / 3000 ml</strong></p>
                         <div style="display:flex; justify-content:center; gap:0.25rem; width: 100%;">
                             <button onclick="addWater(-250)" style="flex:0.5; background:rgba(255,255,255,0.1); color:white; border:1px solid rgba(255,255,255,0.2); border-radius:0.5rem; padding:0.25rem; cursor:pointer;" title="Skasuj szklankę">-</button>
                             <button onclick="addWater(250)" class="btn-primary" style="flex:2; background:linear-gradient(to right, #0ea5e9, #0284c7); padding:0.5rem 0.25rem; margin:0; font-size:0.8rem;">+ Szklanka</button>
@@ -532,7 +532,7 @@ function renderMealsList() {
     let todayDate = new Date().toISOString().split('T')[0];
     let currentWater = waterData[todayDate] || 0;
     const waterElement = document.getElementById('waterCount');
-    if (waterElement) waterElement.textContent = `${currentWater} ml`;
+    if (waterElement) waterElement.textContent = `${currentWater} / 3000 ml`;
     
     // Update Chart.js Always with a tiny delay so DOM settles
     setTimeout(() => {
@@ -591,6 +591,7 @@ window.addWater = function(amount) {
     if (!waterData[todayDate]) waterData[todayDate] = 0;
     waterData[todayDate] += amount;
     if (waterData[todayDate] < 0) waterData[todayDate] = 0;
+    if (waterData[todayDate] > 3000) waterData[todayDate] = 3000;
     saveData();
     renderMealsList();
 }
