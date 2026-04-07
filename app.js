@@ -1,19 +1,23 @@
 const app = document.getElementById('app');
 let state = {
     isLoggedIn: false,
-    username: ''
+    username: '',
+    activeTab: 'bmi'
 };
 let exercises = [];
+let meals = [];
 
-function loadExercises() {
+function loadData() {
     if (state.username) {
         exercises = JSON.parse(localStorage.getItem(`fitness_exercises_${state.username}`)) || [];
+        meals = JSON.parse(localStorage.getItem(`fitness_meals_${state.username}`)) || [];
     }
 }
 
-function saveExercises() {
+function saveData() {
     if (state.username) {
         localStorage.setItem(`fitness_exercises_${state.username}`, JSON.stringify(exercises));
+        localStorage.setItem(`fitness_meals_${state.username}`, JSON.stringify(meals));
     }
 }
 
@@ -60,7 +64,8 @@ function handleLoginSuccess(username) {
     setTimeout(() => {
         state.isLoggedIn = true;
         state.username = username;
-        loadExercises();
+        state.activeTab = 'bmi';
+        loadData();
         renderMain();
     }, 300);
 }
@@ -69,18 +74,42 @@ window.logout = function() {
     state.isLoggedIn = false;
     state.username = '';
     exercises = [];
+    meals = [];
     renderMain();
+}
+
+window.switchTab = function(tabName) {
+    state.activeTab = tabName;
+    renderDashboard();
 }
 
 function renderDashboard() {
     app.innerHTML = `
-        <div class="glass-panel" style="animation: fadeIn 0.5s ease-out; position: relative;">
-            <button onclick="logout()" style="position:absolute; top:1rem; right:1rem; background:transparent; border:1px solid rgba(239, 68, 68, 0.5); color:var(--danger); padding:0.4rem 0.8rem; border-radius:0.5rem; cursor:pointer; transition:all 0.2s; font-size:0.75rem;">Wyloguj</button>
-            <h1>Cześć, ${state.username}!</h1>
-            <p class="subtitle">Twój osobisty panel fitness</p>
+        <div class="glass-panel" style="animation: fadeIn 0.4s ease-out; position: relative;">
+            <button onclick="logout()" style="position:absolute; top:1.25rem; right:1.25rem; background:transparent; border:1px solid rgba(239, 68, 68, 0.5); color:var(--danger); padding:0.4rem 0.8rem; border-radius:0.5rem; cursor:pointer; transition:all 0.2s; font-size:0.75rem;">Wyloguj</button>
+            <h1 style="text-align: left; margin-top: 0; font-size:1.5rem;">Cześć, ${state.username}!</h1>
+            <p class="subtitle" style="text-align: left; margin-bottom: 1.5rem;">Twój panel fitness</p>
             
-            <div class="bmi-calculator">
-                <h2 style="font-size: 1.25rem; text-align:center; margin-top: 0; margin-bottom: 1rem;">Kalkulator BMI</h2>
+            <div class="tabs">
+                <button class="tab-btn ${state.activeTab === 'bmi' ? 'active' : ''}" onclick="switchTab('bmi')">Kalk. BMI</button>
+                <button class="tab-btn ${state.activeTab === 'exercises' ? 'active' : ''}" onclick="switchTab('exercises')">Ćwiczenia</button>
+                <button class="tab-btn ${state.activeTab === 'meals' ? 'active' : ''}" onclick="switchTab('meals')">Posiłki (Makro)</button>
+            </div>
+            
+            <div id="tabContent"></div>
+        </div>
+    `;
+
+    renderTabContent();
+}
+
+function renderTabContent() {
+    const contentDiv = document.getElementById('tabContent');
+    
+    if (state.activeTab === 'bmi') {
+        contentDiv.innerHTML = `
+            <div class="bmi-calculator" style="animation: fadeIn 0.3s ease-out;">
+                <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1rem;">Kalkulator BMI</h2>
                 <div class="input-group">
                     <label for="height">Wzrost (cm)</label>
                     <input type="number" id="height" placeholder="np. 180" min="50" max="250">
@@ -90,40 +119,67 @@ function renderDashboard() {
                     <input type="number" id="weight" placeholder="np. 75" min="20" max="300" step="0.1">
                 </div>
                 <button id="calcBmiBtn" class="btn-primary">Oblicz BMI</button>
-                
                 <div id="bmiResult" class="bmi-result hide">
                     <div id="bmiValue" class="bmi-value">--</div>
                     <div id="bmiStatus" class="bmi-status">--</div>
                 </div>
             </div>
-            
-            <!-- Sekcja Zapisywania Ćwiczeń -->
-            <hr style="border:0; border-top: 1px solid var(--glass-border); margin: 2rem 0;">
-            
-            <div class="exercise-logger">
-                <h2 style="font-size: 1.25rem; text-align:center; margin-top: 0; margin-bottom: 1rem;">Dziennik Ćwiczeń</h2>
+        `;
+        document.getElementById('calcBmiBtn').addEventListener('click', calculateBMI);
+    } 
+    else if (state.activeTab === 'exercises') {
+        contentDiv.innerHTML = `
+            <div class="exercise-logger" style="animation: fadeIn 0.3s ease-out;">
+                <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1rem;">Dziennik Ćwiczeń</h2>
                 <form id="exerciseForm">
                     <div class="input-group">
                         <label for="exName">Nazwa ćwiczenia</label>
-                        <input type="text" id="exName" placeholder="np. Martwy Ciąg" required autocomplete="off">
+                        <input type="text" id="exName" placeholder="np. Przysiady" required autocomplete="off">
                     </div>
                     <div class="input-group">
                         <label for="exDetails">Serie / Powtórzenia</label>
-                        <input type="text" id="exDetails" placeholder="np. 4x8" required autocomplete="off">
+                        <input type="text" id="exDetails" placeholder="np. 3x10" required autocomplete="off">
                     </div>
-                    <button type="submit" class="btn-primary" style="background:linear-gradient(to right, #8b5cf6, #3b82f6);">Zapisz ćwiczenie</button>
+                    <button type="submit" class="btn-primary" style="background:linear-gradient(to right, #8b5cf6, #3b82f6);">Zapisz</button>
                 </form>
-
-                <div class="exercise-list" id="exerciseList">
-                    <!-- Lista ukaże się tutaj -->
-                </div>
+                <div class="list-container" id="exerciseList"></div>
             </div>
-        </div>
-    `;
+        `;
+        document.getElementById('exerciseForm').addEventListener('submit', handleAddExercise);
+        renderExercisesList();
+    }
+    else if (state.activeTab === 'meals') {
+        contentDiv.innerHTML = `
+            <div class="meal-logger" style="animation: fadeIn 0.3s ease-out;">
+                <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1rem;">Baza Posiłków</h2>
+                <form id="mealForm">
+                    <div class="input-group">
+                        <label for="mealName">Nazwa posiłku</label>
+                        <input type="text" id="mealName" placeholder="np. Owsianka z białkiem" required autocomplete="off">
+                    </div>
+                    <div style="display:flex; gap:0.5rem; margin-bottom: 1.25rem;">
+                        <div style="flex:1;">
+                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Kcal</label>
+                            <input type="number" id="mealKcal" placeholder="450" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
+                        </div>
+                        <div style="flex:1;">
+                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Białko (g)</label>
+                            <input type="number" id="mealProtein" placeholder="30" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn-primary" style="background:linear-gradient(to right, #10b981, #059669);">Dodaj Posiłek</button>
+                </form>
+                
+                <div id="mealSummary" style="margin-top:1.5rem; padding:0.75rem; border-radius:0.5rem; background:rgba(0,0,0,0.3); text-align:center; border:1px solid rgba(16, 185, 129, 0.2);">
+                     <strong style="color:var(--text-color);">Podsumowanie: </strong> <span id="totalKcal" style="color:#10b981; font-weight:bold;">0</span> kcal | <span id="totalProtein" style="color:#60a5fa; font-weight:bold;">0</span> g białka
+                </div>
 
-    document.getElementById('calcBmiBtn').addEventListener('click', calculateBMI);
-    document.getElementById('exerciseForm').addEventListener('submit', handleAddExercise);
-    renderExercises();
+                <div class="list-container" id="mealList"></div>
+            </div>
+        `;
+        document.getElementById('mealForm').addEventListener('submit', handleAddMeal);
+        renderMealsList();
+    }
 }
 
 function calculateBMI() {
@@ -182,22 +238,19 @@ function handleAddExercise(e) {
     const nameInput = document.getElementById('exName');
     const detailsInput = document.getElementById('exDetails');
     
-    const newEx = {
+    exercises.push({
         id: Date.now().toString(),
         name: nameInput.value.trim(),
         details: detailsInput.value.trim()
-    };
-    
-    exercises.push(newEx);
-    saveExercises();
+    });
+    saveData();
     
     nameInput.value = '';
     detailsInput.value = '';
-    
-    renderExercises();
+    renderExercisesList();
 }
 
-function renderExercises() {
+function renderExercisesList() {
     const listDiv = document.getElementById('exerciseList');
     if (exercises.length === 0) {
         listDiv.innerHTML = '<p style="text-align:center; color: var(--text-muted); font-size: 0.875rem; margin-top:1rem;">Brak zapisanych ćwiczeń.</p>';
@@ -207,24 +260,83 @@ function renderExercises() {
     let html = '<ul style="list-style:none; padding:0; margin-top:1.5rem;">';
     exercises.forEach(ex => {
         html += `
-            <li class="exercise-item">
-                <div class="ex-info">
+            <li class="list-item">
+                <div class="item-info">
                     <strong>${ex.name}</strong>
-                    <span class="ex-details">${ex.details}</span>
+                    <span class="item-details">${ex.details}</span>
                 </div>
-                <button onclick="deleteExercise('${ex.id}')" class="ex-delete">✕</button>
+                <button onclick="deleteExercise('${ex.id}')" class="item-delete">✕</button>
             </li>
         `;
     });
     html += '</ul>';
-    
     listDiv.innerHTML = html;
 }
 
 window.deleteExercise = function(id) {
     exercises = exercises.filter(ex => ex.id !== id);
-    saveExercises();
-    renderExercises();
+    saveData();
+    renderExercisesList();
+}
+
+function handleAddMeal(e) {
+    e.preventDefault();
+    const nameInput = document.getElementById('mealName');
+    const kcalInput = document.getElementById('mealKcal');
+    const proteinInput = document.getElementById('mealProtein');
+    
+    meals.push({
+        id: Date.now().toString(),
+        name: nameInput.value.trim(),
+        kcal: parseInt(kcalInput.value) || 0,
+        protein: parseInt(proteinInput.value) || 0
+    });
+    saveData();
+    
+    nameInput.value = '';
+    kcalInput.value = '';
+    proteinInput.value = '';
+    renderMealsList();
+}
+
+function renderMealsList() {
+    const listDiv = document.getElementById('mealList');
+    let totalKcal = 0;
+    let totalProtein = 0;
+    
+    if (meals.length === 0) {
+        listDiv.innerHTML = '<p style="text-align:center; color: var(--text-muted); font-size: 0.875rem; margin-top:1rem;">Brak zapisanych posiłków.</p>';
+        document.getElementById('totalKcal').textContent = '0';
+        document.getElementById('totalProtein').textContent = '0';
+        return;
+    }
+    
+    let html = '<ul style="list-style:none; padding:0; margin-top:1.5rem;">';
+    meals.forEach(m => {
+        totalKcal += m.kcal;
+        totalProtein += m.protein;
+        
+        html += `
+            <li class="list-item">
+                <div class="item-info">
+                    <strong>${m.name}</strong>
+                    <span class="item-details" style="color:#10b981;">🔥 ${m.kcal} kcal &bull; <span style="color:#60a5fa;">🥩 ${m.protein}g białka</span></span>
+                </div>
+                <button onclick="deleteMeal('${m.id}')" class="item-delete">✕</button>
+            </li>
+        `;
+    });
+    html += '</ul>';
+    
+    document.getElementById('totalKcal').textContent = totalKcal;
+    document.getElementById('totalProtein').textContent = totalProtein;
+    listDiv.innerHTML = html;
+}
+
+window.deleteMeal = function(id) {
+    meals = meals.filter(m => m.id !== id);
+    saveData();
+    renderMealsList();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
