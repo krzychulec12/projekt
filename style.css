@@ -154,6 +154,47 @@ h1 {
 .text-warning { color: #f59e0b; }
 .text-danger { color: #ef4444; }
 
+/* Dziennik Ćwiczeń */
+.exercise-item {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 0.5rem;
+    padding: 0.75rem 1rem;
+    margin-bottom: 0.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    transition: all 0.2s;
+}
+
+.exercise-item:hover {
+    background: rgba(255, 255, 255, 0.1);
+}
+
+.ex-info {
+    display: flex;
+    flex-direction: column;
+}
+
+.ex-details {
+    font-size: 0.75rem;
+    color: var(--text-muted);
+    margin-top: 0.25rem;
+}
+
+.ex-delete {
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.25rem;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.ex-delete:hover {
+    color: var(--danger);
+}
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }

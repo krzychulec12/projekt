@@ -3,6 +3,11 @@ let state = {
     isLoggedIn: false,
     username: ''
 };
+let exercises = JSON.parse(localStorage.getItem('fitness_exercises')) || [];
+
+function saveExercises() {
+    localStorage.setItem('fitness_exercises', JSON.stringify(exercises));
+}
 
 function renderMain() {
     if (!state.isLoggedIn) {
@@ -75,13 +80,33 @@ function renderDashboard() {
                 </div>
             </div>
             
-            <p style="text-align:center; color: var(--text-muted); font-size: 12px; margin-top: 1.5rem;">
-                Dziennik ćwiczeń (Krok 4) wkrótce...
-            </p>
+            <!-- Sekcja Zapisywania Ćwiczeń -->
+            <hr style="border:0; border-top: 1px solid var(--glass-border); margin: 2rem 0;">
+            
+            <div class="exercise-logger">
+                <h2 style="font-size: 1.25rem; text-align:center; margin-top: 0; margin-bottom: 1rem;">Dziennik Ćwiczeń</h2>
+                <form id="exerciseForm">
+                    <div class="input-group">
+                        <label for="exName">Nazwa ćwiczenia</label>
+                        <input type="text" id="exName" placeholder="np. Martwy Ciąg" required autocomplete="off">
+                    </div>
+                    <div class="input-group">
+                        <label for="exDetails">Serie / Powtórzenia</label>
+                        <input type="text" id="exDetails" placeholder="np. 4x8" required autocomplete="off">
+                    </div>
+                    <button type="submit" class="btn-primary" style="background:linear-gradient(to right, #8b5cf6, #3b82f6);">Zapisz ćwiczenie</button>
+                </form>
+
+                <div class="exercise-list" id="exerciseList">
+                    <!-- Lista ukaże się tutaj -->
+                </div>
+            </div>
         </div>
     `;
 
     document.getElementById('calcBmiBtn').addEventListener('click', calculateBMI);
+    document.getElementById('exerciseForm').addEventListener('submit', handleAddExercise);
+    renderExercises();
 }
 
 function calculateBMI() {
@@ -121,6 +146,56 @@ function calculateBMI() {
 
     statusDiv.textContent = status;
     statusDiv.className = `bmi-status ${colorClass}`;
+}
+
+function handleAddExercise(e) {
+    e.preventDefault();
+    const nameInput = document.getElementById('exName');
+    const detailsInput = document.getElementById('exDetails');
+    
+    const newEx = {
+        id: Date.now().toString(),
+        name: nameInput.value.trim(),
+        details: detailsInput.value.trim()
+    };
+    
+    exercises.push(newEx);
+    saveExercises();
+    
+    nameInput.value = '';
+    detailsInput.value = '';
+    
+    renderExercises();
+}
+
+function renderExercises() {
+    const listDiv = document.getElementById('exerciseList');
+    if (exercises.length === 0) {
+        listDiv.innerHTML = '<p style="text-align:center; color: var(--text-muted); font-size: 0.875rem; margin-top:1rem;">Brak zapisanych ćwiczeń.</p>';
+        return;
+    }
+    
+    let html = '<ul style="list-style:none; padding:0; margin-top:1.5rem;">';
+    exercises.forEach(ex => {
+        html += `
+            <li class="exercise-item">
+                <div class="ex-info">
+                    <strong>${ex.name}</strong>
+                    <span class="ex-details">${ex.details}</span>
+                </div>
+                <button onclick="deleteExercise('${ex.id}')" class="ex-delete">✕</button>
+            </li>
+        `;
+    });
+    html += '</ul>';
+    
+    listDiv.innerHTML = html;
+}
+
+window.deleteExercise = function(id) {
+    exercises = exercises.filter(ex => ex.id !== id);
+    saveExercises();
+    renderExercises();
 }
 
 document.addEventListener('DOMContentLoaded', () => {
