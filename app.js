@@ -10,11 +10,13 @@ let notes = [];
 let progressData = [];
 let waterData = {};
 let targetKcal = 0;
+let workouts = [];
 
 function loadData() {
     if (state.username) {
         exercises = JSON.parse(localStorage.getItem(`fitness_exercises_${state.username}`)) || [];
         meals = JSON.parse(localStorage.getItem(`fitness_meals_${state.username}`)) || [];
+        workouts = JSON.parse(localStorage.getItem(`fitness_workouts_${state.username}`)) || [];
         progressData = JSON.parse(localStorage.getItem(`fitness_progress_${state.username}`)) || [];
         waterData = JSON.parse(localStorage.getItem(`fitness_water_${state.username}`)) || {};
         targetKcal = parseInt(localStorage.getItem(`fitness_targetKcal_${state.username}`)) || 0;
@@ -37,6 +39,7 @@ function saveData() {
     if (state.username) {
         localStorage.setItem(`fitness_exercises_${state.username}`, JSON.stringify(exercises));
         localStorage.setItem(`fitness_meals_${state.username}`, JSON.stringify(meals));
+        localStorage.setItem(`fitness_workouts_${state.username}`, JSON.stringify(workouts));
         localStorage.setItem(`fitness_notes_${state.username}`, JSON.stringify(notes));
         localStorage.setItem(`fitness_water_${state.username}`, JSON.stringify(waterData));
         localStorage.setItem(`fitness_targetKcal_${state.username}`, targetKcal);
@@ -102,6 +105,7 @@ window.logout = function() {
     state.username = '';
     exercises = [];
     meals = [];
+    workouts = [];
     notes = [];
     progressData = [];
     renderMain();
@@ -116,6 +120,7 @@ function exportData() {
     const dataObj = {
         exercises,
         meals,
+        workouts,
         notes,
         progressData,
         waterData,
@@ -141,6 +146,7 @@ function handleImport(event) {
             const imported = JSON.parse(e.target.result);
             exercises = imported.exercises || [];
             meals = imported.meals || [];
+            workouts = imported.workouts || [];
             notes = imported.notes || [];
             progressData = imported.progressData || [];
             waterData = imported.waterData || {};
@@ -261,6 +267,17 @@ function renderTabContent() {
         contentDiv.innerHTML = `
             <div class="exercise-logger" style="animation: fadeIn 0.3s ease-out;">
                 <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1rem;">Dziennik Ćwiczeń</h2>
+                
+                <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem;">
+                    <h3 style="font-size: 1rem; margin-top: 0; margin-bottom: 0.75rem; color:#a78bfa; text-align:center;">🏋️ Kalkulator Siły (1RM)</h3>
+                    <div style="display:flex; gap:0.5rem; justify-content:center;">
+                        <input type="number" id="rmWeight" placeholder="Ciężar (kg)" min="1" step="0.5" style="flex:1; border-radius:0.5rem; padding:0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.8rem;">
+                        <input type="number" id="rmReps" placeholder="Powtórz." min="1" max="50" style="flex:1; border-radius:0.5rem; padding:0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.8rem;">
+                        <button onclick="calculate1RM()" class="btn-primary" style="flex:1; margin:0; padding:0.5rem; background:linear-gradient(to right, #8b5cf6, #6d28d9); font-size:0.8rem;">Celuj</button>
+                    </div>
+                    <div id="rmResult" style="text-align:center; font-size:0.9rem; color:#10b981; margin-top:0.75rem; font-weight:bold;"></div>
+                </div>
+
                 <form id="exerciseForm">
                     <div class="input-group">
                         <label for="exName">Nazwa ćwiczenia</label>
@@ -270,7 +287,7 @@ function renderTabContent() {
                         <label for="exDetails">Serie / Powtórzenia</label>
                         <input type="text" id="exDetails" placeholder="np. 3x10" required autocomplete="off">
                     </div>
-                    <button type="submit" class="btn-primary" style="background:linear-gradient(to right, #8b5cf6, #3b82f6);">Zapisz</button>
+                    <button type="submit" class="btn-primary" style="background:linear-gradient(to right, #8b5cf6, #3b82f6);">Zapisz Wpis</button>
                 </form>
                 <div class="list-container" id="exerciseList"></div>
             </div>
@@ -336,8 +353,17 @@ function renderTabContent() {
                     <button type="submit" class="btn-primary" style="background:linear-gradient(to right, #10b981, #059669);">Dodaj Posiłek</button>
                 </form>
                 
+                <form id="workoutForm" style="background: rgba(14, 165, 233, 0.1); padding: 1rem; border-radius: 0.5rem; border: 1px solid rgba(14, 165, 233, 0.3); margin-bottom: 1.5rem;">
+                    <h3 style="font-size: 0.95rem; margin-top: 0; margin-bottom: 0.75rem; color:#38bdf8;">🏃 Dodaj Spalanie Kalorii (Trening)</h3>
+                    <div style="display:flex; gap:0.5rem; margin-bottom: 0;">
+                        <input type="text" id="workName" placeholder="np. Bieganie 30 min" required autocomplete="off" style="flex:2; border-radius:0.5rem; padding:0.75rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.8rem;">
+                        <input type="number" id="workKcal" placeholder="Kcal" min="1" required style="flex:1; border-radius:0.5rem; padding:0.75rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.8rem;">
+                        <button type="submit" class="btn-primary" style="flex:1; background:linear-gradient(to right, #0ea5e9, #0284c7); padding:0.75rem; margin:0; font-size:0.8rem;">Zapisz</button>
+                    </div>
+                </form>
+                
                 <div id="mealSummary" style="margin-top:1.5rem; padding:0.75rem; border-radius:0.5rem; background:rgba(0,0,0,0.3); text-align:center; border:1px solid rgba(16, 185, 129, 0.2); font-size:1.1rem;">
-                     <strong style="color:var(--text-color);">Suma: </strong> 
+                     <strong style="color:var(--text-color);">Zjedzono bilansowo: </strong> 
                      <span id="totalKcal" style="color:#10b981; font-weight:bold;">0</span> kcal
                 </div>
 
@@ -345,6 +371,7 @@ function renderTabContent() {
             </div>
         `;
         document.getElementById('mealForm').addEventListener('submit', handleAddMeal);
+        document.getElementById('workoutForm').addEventListener('submit', handleAddWorkout);
         renderMealsList();
     }
     else if (state.activeTab === 'notes') {
@@ -521,6 +548,21 @@ window.deleteExercise = function(id) {
     renderExercisesList();
 }
 
+window.calculate1RM = function() {
+    const w = parseFloat(document.getElementById('rmWeight').value);
+    const r = parseFloat(document.getElementById('rmReps').value);
+    const resDiv = document.getElementById('rmResult');
+    if (!w || !r || w<=0 || r<=0) {
+        resDiv.textContent = '❌ Błędne wartości';
+        resDiv.style.color = '#ef4444';
+        return;
+    }
+    // Epley formula: max = W * (1 + R/30)
+    const max = Math.round(w * (1 + (r / 30)));
+    resDiv.textContent = `💪 Twój Max: ok. ${max} kg`;
+    resDiv.style.color = '#10b981';
+}
+
 function handleAddMeal(e) {
     e.preventDefault();
     const dateInput = document.getElementById('mealDate');
@@ -544,23 +586,50 @@ function handleAddMeal(e) {
     renderMealsList();
 }
 
+window.deleteWorkout = function(id) {
+    workouts = workouts.filter(w => w.id !== id);
+    saveData();
+    renderMealsList();
+}
+
+function handleAddWorkout(e) {
+    e.preventDefault();
+    const wName = document.getElementById('workName');
+    const wKcal = document.getElementById('workKcal');
+    const today = new Date().toISOString().split('T')[0];
+    
+    workouts.push({
+        id: Date.now().toString(),
+        date: today,
+        name: wName.value.trim(),
+        kcal: Math.max(0, parseInt(wKcal.value) || 0)
+    });
+    saveData();
+    
+    wName.value = '';
+    wKcal.value = '';
+    renderMealsList();
+}
+
 function renderMealsList() {
     const listDiv = document.getElementById('mealList');
     let totalKcal = 0;
+    let burnedKcal = 0;
     
-    meals.forEach(m => {
-        totalKcal += m.kcal;
-    });
+    meals.forEach(m => totalKcal += m.kcal);
+    workouts.forEach(w => burnedKcal += w.kcal);
+    
+    let netKcal = totalKcal - burnedKcal;
     
     // Target calculation wrapper update
     const summaryDiv = document.getElementById('mealSummary');
     if (summaryDiv) {
         if (targetKcal > 0) {
-            let left = targetKcal - totalKcal;
+            let left = targetKcal - netKcal;
             let leftMsg = left >= 0 ? `🔥 Zostało ci: <strong style="color:#f59e0b;">${left} kcal</strong>` : `⚠️ Przekroczenie o: <strong style="color:var(--danger);">${Math.abs(left)} kcal</strong>`;
-            summaryDiv.innerHTML = `<strong style="color:var(--text-color);">Zjedzono: </strong><span id="totalKcal" style="color:#10b981; font-weight:bold;">${totalKcal}</span> kcal / <span style="font-size:0.8rem; color:var(--text-muted);">${targetKcal} kcal cel</span><br><div style="margin-top:0.4rem; font-size:0.85rem;">${leftMsg}</div>`;
+            summaryDiv.innerHTML = `<strong style="color:var(--text-color);">Zjedzono bilansowo: </strong><span id="totalKcal" style="color:#10b981; font-weight:bold;">${netKcal}</span> kcal / <span style="font-size:0.8rem; color:var(--text-muted);">${targetKcal} kcal cel</span><br><div style="margin-top:0.4rem; font-size:0.85rem;">${leftMsg} ${burnedKcal > 0 ? `(Odzyskano 🏃+${burnedKcal} kcal)` : ''}</div>`;
         } else {
-            summaryDiv.innerHTML = `<strong style="color:var(--text-color);">Zjedzono: </strong><span id="totalKcal" style="color:#10b981; font-weight:bold;">${totalKcal}</span> kcal<div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.3rem;">Oblicz swój Cel w Kalkulatorze BMI, aby zyskać licznik bilansu widoczny na żywo.</div>`;
+            summaryDiv.innerHTML = `<strong style="color:var(--text-color);">Zjedzono bilansowo: </strong><span id="totalKcal" style="color:#10b981; font-weight:bold;">${netKcal}</span> kcal<div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.3rem;">Oblicz swój Cel w Kalkulatorze BMI, aby zyskać licznik bilansu widoczny na żywo.</div>`;
         }
     }
     
@@ -576,30 +645,49 @@ function renderMealsList() {
         }
     }
 
-    if (meals.length === 0) {
-        listDiv.innerHTML = '<p style="text-align:center; color: var(--text-muted); font-size: 0.875rem; margin-top:1rem;">Brak zapisanych posiłków.</p>';
+    let html = '';
+    
+    if (meals.length === 0 && workouts.length === 0) {
+        listDiv.innerHTML = '<p style="text-align:center; color: var(--text-muted); font-size: 0.875rem; margin-top:1rem;">Brak wpisów dla tego dziennika.</p>';
         return;
     }
     
-    let html = '<ul style="list-style:none; padding:0; margin-top:1.5rem;">';
-    meals.forEach(m => {
-        const mDate = m.date || '—';
-        const mTime = m.time || '';
-        const mType = m.type || '';
-        
-        html += `
-            <li class="list-item" style="position:relative;">
-                <div class="item-info" style="width: 100%;">
-                    <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.25rem;">🗓️ ${mDate} ${mTime ? '⏰ '+mTime : ''} &bull; ⏳ ${mType}</div>
-                    <strong style="font-size:1rem;">${m.name}</strong>
-                    <div class="item-details" style="color:#10b981; margin-top:0.35rem;">🔥 ${m.kcal} kcal</div>
-                </div>
-                <button onclick="deleteMeal('${m.id}')" class="item-delete" style="position:absolute; top:0.75rem; right:0.75rem;">✕</button>
-            </li>
-        `;
+    let mixedItems = [];
+    meals.forEach(m => mixedItems.push({ ...m, isWorkout: false }));
+    workouts.forEach(w => mixedItems.push({ ...w, isWorkout: true }));
+    // Sort by id (timestamp mostly) so recent enters show bottom
+    mixedItems.sort((a,b) => parseInt(a.id) - parseInt(b.id));
+
+    html += '<ul style="list-style:none; padding:0; margin-top:1.5rem;">';
+    mixedItems.forEach(item => {
+        if (item.isWorkout) {
+            html += `
+                <li class="list-item" style="position:relative; background: rgba(14, 165, 233, 0.05); border: 1px solid rgba(14, 165, 233, 0.2);">
+                    <div class="item-info" style="width: 100%;">
+                        <div style="font-size: 0.7rem; color:#38bdf8; margin-bottom: 0.25rem;">🗓️ ${item.date || '—'} &bull; 🏃 Aktywność Fizyczna</div>
+                        <strong style="font-size:1rem; color:#e0f2fe;">${item.name}</strong>
+                        <div class="item-details" style="color:#38bdf8; margin-top:0.35rem; font-weight:bold;">🔥 Odzyskano ${item.kcal} kcal</div>
+                    </div>
+                    <button onclick="deleteWorkout('${item.id}')" class="item-delete" style="position:absolute; top:0.75rem; right:0.75rem; color:#38bdf8;">✕</button>
+                </li>
+            `;
+        } else {
+            const mDate = item.date || '—';
+            const mTime = item.time || '';
+            const mType = item.type || '';
+            html += `
+                <li class="list-item" style="position:relative;">
+                    <div class="item-info" style="width: 100%;">
+                        <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.25rem;">🗓️ ${mDate} ${mTime ? '⏰ '+mTime : ''} &bull; ⏳ ${mType}</div>
+                        <strong style="font-size:1rem;">${item.name}</strong>
+                        <div class="item-details" style="color:#10b981; margin-top:0.35rem;">🔥 Spożyto ${item.kcal} kcal</div>
+                    </div>
+                    <button onclick="deleteMeal('${item.id}')" class="item-delete" style="position:absolute; top:0.75rem; right:0.75rem;">✕</button>
+                </li>
+            `;
+        }
     });
     html += '</ul>';
-    
     listDiv.innerHTML = html;
 }
 
