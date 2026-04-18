@@ -267,16 +267,6 @@ function renderTabContent() {
         contentDiv.innerHTML = `
             <div class="exercise-logger" style="animation: fadeIn 0.3s ease-out;">
                 <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1rem;">Dziennik Ćwiczeń</h2>
-                
-                <div style="background: rgba(139, 92, 246, 0.1); border: 1px solid rgba(139, 92, 246, 0.3); border-radius: 0.5rem; padding: 1rem; margin-bottom: 1.5rem;">
-                    <h3 style="font-size: 1rem; margin-top: 0; margin-bottom: 0.75rem; color:#a78bfa; text-align:center;">🏋️ Kalkulator Siły (1RM)</h3>
-                    <div style="display:flex; gap:0.5rem; justify-content:center;">
-                        <input type="number" id="rmWeight" placeholder="Ciężar (kg)" min="1" step="0.5" style="flex:1; border-radius:0.5rem; padding:0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.8rem;">
-                        <input type="number" id="rmReps" placeholder="Powtórz." min="1" max="50" style="flex:1; border-radius:0.5rem; padding:0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.8rem;">
-                        <button onclick="calculate1RM()" class="btn-primary" style="flex:1; margin:0; padding:0.5rem; background:linear-gradient(to right, #8b5cf6, #6d28d9); font-size:0.8rem;">Celuj</button>
-                    </div>
-                    <div id="rmResult" style="text-align:center; font-size:0.9rem; color:#10b981; margin-top:0.75rem; font-weight:bold;"></div>
-                </div>
 
                 <form id="exerciseForm">
                     <div class="input-group">
@@ -356,8 +346,7 @@ function renderTabContent() {
                 <form id="workoutForm" style="background: rgba(14, 165, 233, 0.1); padding: 1rem; border-radius: 0.5rem; border: 1px solid rgba(14, 165, 233, 0.3); margin-bottom: 1.5rem;">
                     <h3 style="font-size: 0.95rem; margin-top: 0; margin-bottom: 0.75rem; color:#38bdf8;">🏃 Dodaj Spalanie Kalorii (Trening)</h3>
                     <div style="display:flex; gap:0.5rem; margin-bottom: 0;">
-                        <input type="text" id="workName" placeholder="np. Bieganie 30 min" required autocomplete="off" style="flex:2; border-radius:0.5rem; padding:0.75rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.8rem;">
-                        <input type="number" id="workKcal" placeholder="Kcal" min="1" required style="flex:1; border-radius:0.5rem; padding:0.75rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.8rem;">
+                        <input type="number" id="workKcal" placeholder="Spalone Kcal" min="1" required style="flex:1; border-radius:0.5rem; padding:0.75rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.8rem;">
                         <button type="submit" class="btn-primary" style="flex:1; background:linear-gradient(to right, #0ea5e9, #0284c7); padding:0.75rem; margin:0; font-size:0.8rem;">Zapisz</button>
                     </div>
                 </form>
@@ -548,20 +537,7 @@ window.deleteExercise = function(id) {
     renderExercisesList();
 }
 
-window.calculate1RM = function() {
-    const w = parseFloat(document.getElementById('rmWeight').value);
-    const r = parseFloat(document.getElementById('rmReps').value);
-    const resDiv = document.getElementById('rmResult');
-    if (!w || !r || w<=0 || r<=0) {
-        resDiv.textContent = '❌ Błędne wartości';
-        resDiv.style.color = '#ef4444';
-        return;
-    }
-    // Epley formula: max = W * (1 + R/30)
-    const max = Math.round(w * (1 + (r / 30)));
-    resDiv.textContent = `💪 Twój Max: ok. ${max} kg`;
-    resDiv.style.color = '#10b981';
-}
+
 
 function handleAddMeal(e) {
     e.preventDefault();
@@ -594,19 +570,16 @@ window.deleteWorkout = function(id) {
 
 function handleAddWorkout(e) {
     e.preventDefault();
-    const wName = document.getElementById('workName');
     const wKcal = document.getElementById('workKcal');
     const today = new Date().toISOString().split('T')[0];
     
     workouts.push({
         id: Date.now().toString(),
         date: today,
-        name: wName.value.trim(),
         kcal: Math.max(0, parseInt(wKcal.value) || 0)
     });
     saveData();
     
-    wName.value = '';
     wKcal.value = '';
     renderMealsList();
 }
@@ -665,7 +638,6 @@ function renderMealsList() {
                 <li class="list-item" style="position:relative; background: rgba(14, 165, 233, 0.05); border: 1px solid rgba(14, 165, 233, 0.2);">
                     <div class="item-info" style="width: 100%;">
                         <div style="font-size: 0.7rem; color:#38bdf8; margin-bottom: 0.25rem;">🗓️ ${item.date || '—'} &bull; 🏃 Aktywność Fizyczna</div>
-                        <strong style="font-size:1rem; color:#e0f2fe;">${item.name}</strong>
                         <div class="item-details" style="color:#38bdf8; margin-top:0.35rem; font-weight:bold;">🔥 Odzyskano ${item.kcal} kcal</div>
                     </div>
                     <button onclick="deleteWorkout('${item.id}')" class="item-delete" style="position:absolute; top:0.75rem; right:0.75rem; color:#38bdf8;">✕</button>
