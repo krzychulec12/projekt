@@ -153,7 +153,7 @@ function renderTabContent() {
                     </div>
                 </div>
 
-                <div style="display:flex; gap:0.5rem; margin-bottom:1.25rem;">
+                <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
                     <div style="flex:1;">
                         <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Wzrost (cm)</label>
                         <input type="number" id="height" placeholder="np. 180" min="50" max="250" style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
@@ -164,7 +164,27 @@ function renderTabContent() {
                     </div>
                 </div>
                 
-                <button id="calcBmiBtn" class="btn-primary">Oblicz BMI i Kalorie</button>
+                <div style="margin-bottom:1rem;">
+                    <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Poziom aktywności (w ciągu dnia)</label>
+                    <select id="activity" style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit;">
+                        <option value="1.2">Brak aktywności (siedzący tryb życia)</option>
+                        <option value="1.375">Niska aktywność (trening 1-3 razy w tyg.)</option>
+                        <option value="1.55">Umiarkowana (trening 3-5 razy w tyg.)</option>
+                        <option value="1.725">Wysoka aktywność (trening codziennie)</option>
+                        <option value="1.9">Bardzo wysoka (fizyczna praca + trening)</option>
+                    </select>
+                </div>
+                
+                <div style="margin-bottom:1.5rem;">
+                    <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Twój Cel</label>
+                    <select id="goal" style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit;">
+                        <option value="-500">Chcę schudnąć (Redukcja, ok. -0.5kg / tyg.)</option>
+                        <option value="0">Chcę utrzymać masę ciała</option>
+                        <option value="300">Chcę zbudować masę (Nadwyżka kaloryczna)</option>
+                    </select>
+                </div>
+                
+                <button id="calcBmiBtn" class="btn-primary">Oblicz Twój Plan</button>
                 
                 <div id="bmiResult" class="bmi-result hide" style="margin-top: 1.5rem;">
                     <div id="bmiValue" class="bmi-value">--</div>
@@ -172,20 +192,9 @@ function renderTabContent() {
                     
                     <hr style="border:0; border-top: 1px solid var(--glass-border); margin: 1.5rem 0;">
                     
-                    <h3 style="font-size: 1.1rem; margin-top:0; color:var(--text-color);">Zapotrzebowanie Kaloryczne</h3>
-                    <div style="display:flex; flex-direction:column; gap:0.5rem; text-align:left; font-size:0.9rem; padding: 0.5rem;">
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="color:var(--text-muted);">Redukcja (Chudnięcie):</span>
-                            <strong id="calLose" style="color:#f59e0b;">-- kcal</strong>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="color:var(--text-muted);">Utrzymanie wagi:</span>
-                            <strong id="calMaintain" style="color:#10b981;">-- kcal</strong>
-                        </div>
-                        <div style="display:flex; justify-content:space-between; align-items:center;">
-                            <span style="color:var(--text-muted);">Budowa masy (Tycie):</span>
-                            <strong id="calGain" style="color:#60a5fa;">-- kcal</strong>
-                        </div>
+                    <h3 style="font-size: 1.1rem; margin-top:0; color:var(--text-muted);">Zalecane kalorie dla Twojego celu:</h3>
+                    <div style="text-align:center; padding: 0.5rem;">
+                        <strong id="finalCalories" style="color:#10b981; font-size:2rem; line-height:1;">--</strong> <span style="color:#10b981; font-size:1rem;">kcal / dobę</span>
                     </div>
                 </div>
             </div>
@@ -228,19 +237,13 @@ function renderTabContent() {
                 <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
                     <div style="flex: 1; min-width: 140px; background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.4); border-radius: 0.5rem; padding: 1rem; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
                         <h3 style="font-size: 1rem; color: #38bdf8; margin-top: 0; margin-bottom: 0.25rem;">Woda 💧</h3>
-                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem;">Dzisiaj: <br><strong id="waterCount" style="color:white; font-size:1.1rem; display:inline-block; margin-top:0.25rem;">${currentWater} / 3000 ml</strong></p>
+                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem; min-height: 40px; display: flex; flex-direction: column; justify-content: center;">Dzisiaj: <br><strong id="waterCount" style="color:white; font-size:1.1rem; display:inline-block; margin-top:0.25rem;">--</strong></p>
                         <div style="display:flex; justify-content:center; gap:0.25rem; width: 100%;">
                             <button onclick="addWater(-250)" style="flex:0.5; background:rgba(255,255,255,0.1); color:white; border:1px solid rgba(255,255,255,0.2); border-radius:0.5rem; padding:0.25rem; cursor:pointer;" title="Skasuj szklankę">-</button>
                             <button onclick="addWater(250)" class="btn-primary" style="flex:2; background:linear-gradient(to right, #0ea5e9, #0284c7); padding:0.5rem 0.25rem; margin:0; font-size:0.8rem;">+ Szklanka</button>
                         </div>
                     </div>
                     
-                    <div style="flex: 1; min-width: 140px; background: rgba(255, 255, 255, 0.05); border: 1px solid var(--glass-border); border-radius: 0.5rem; padding: 0.5rem 1rem 1rem 1rem; display: flex; flex-direction: column; align-items: center;">
-                        <h3 style="font-size: 0.9rem; color:var(--text-color); margin-top: 0; margin-bottom: 0.25rem; text-align:center;">Makro</h3>
-                        <div style="width: 100%; height: 110px; position: relative;">
-                            <canvas id="macroChart"></canvas>
-                        </div>
-                    </div>
                 </div>
 
                 <form id="mealForm" style="background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--glass-border); margin-bottom: 1.5rem;">
@@ -268,35 +271,18 @@ function renderTabContent() {
                         <label for="mealName">Nazwa posiłku</label>
                         <input type="text" id="mealName" placeholder="np. Owsianka z białkiem" required autocomplete="off">
                     </div>
-                    <div style="display:flex; gap:0.5rem; margin-bottom: 0.75rem;">
+                    <div style="display:flex; gap:0.5rem; margin-bottom: 1.25rem;">
                         <div style="flex:1;">
                             <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Kcal</label>
                             <input type="number" id="mealKcal" placeholder="450" min="0" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
-                        </div>
-                        <div style="flex:1;">
-                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Białko (g)</label>
-                            <input type="number" id="mealProtein" placeholder="30" min="0" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
-                        </div>
-                    </div>
-                    <div style="display:flex; gap:0.5rem; margin-bottom: 1.25rem;">
-                        <div style="flex:1;">
-                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Węgle (g)</label>
-                            <input type="number" id="mealCarbs" placeholder="50" min="0" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
-                        </div>
-                        <div style="flex:1;">
-                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Tłuszcz (g)</label>
-                            <input type="number" id="mealFats" placeholder="15" min="0" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
                         </div>
                     </div>
                     <button type="submit" class="btn-primary" style="background:linear-gradient(to right, #10b981, #059669);">Dodaj Posiłek</button>
                 </form>
                 
-                <div id="mealSummary" style="margin-top:1.5rem; padding:0.75rem; border-radius:0.5rem; background:rgba(0,0,0,0.3); text-align:center; border:1px solid rgba(16, 185, 129, 0.2); font-size:0.9rem;">
+                <div id="mealSummary" style="margin-top:1.5rem; padding:0.75rem; border-radius:0.5rem; background:rgba(0,0,0,0.3); text-align:center; border:1px solid rgba(16, 185, 129, 0.2); font-size:1.1rem;">
                      <strong style="color:var(--text-color);">Suma: </strong> 
-                     <span id="totalKcal" style="color:#10b981; font-weight:bold;">0</span> kcal | 
-                     <span id="totalProtein" style="color:#60a5fa; font-weight:bold;">0</span>g B | 
-                     <span id="totalCarbs" style="color:#f59e0b; font-weight:bold;">0</span>g W | 
-                     <span id="totalFats" style="color:#ef4444; font-weight:bold;">0</span>g T
+                     <span id="totalKcal" style="color:#10b981; font-weight:bold;">0</span> kcal
                 </div>
 
                 <div class="list-container" id="mealList"></div>
@@ -363,6 +349,8 @@ function calculateBMI() {
     const gender = document.getElementById('gender').value;
     const height = parseFloat(document.getElementById('height').value);
     const weight = parseFloat(document.getElementById('weight').value);
+    const activityMultiplier = parseFloat(document.getElementById('activity').value);
+    const goalAdjustment = parseInt(document.getElementById('goal').value);
     
     const resultDiv = document.getElementById('bmiResult');
     const valueDiv = document.getElementById('bmiValue');
@@ -411,7 +399,7 @@ function calculateBMI() {
     statusDiv.textContent = status;
     statusDiv.className = `bmi-status ${colorClass}`;
     
-    // 2. TDEE Calculation (Mifflin-St Jeor, zakladajac srednia aktywnosc x 1.35)
+    // 2. TDEE Calculation (Mifflin-St Jeor)
     let bmr = 0;
     if (gender === 'male') {
         bmr = (10 * weight) + (6.25 * height) - (5 * age) + 5;
@@ -419,14 +407,11 @@ function calculateBMI() {
         bmr = (10 * weight) + (6.25 * height) - (5 * age) - 161;
     }
     
-    // Zapotrzebowanie (okolo)
-    const maintenance = Math.round(bmr * 1.35);
-    const loss = maintenance - 500;
-    const gain = maintenance + 500;
+    // Zapotrzebowanie docelowe
+    const totalDailyEnergyExpenditure = bmr * activityMultiplier;
+    const finalTarget = Math.round(totalDailyEnergyExpenditure + goalAdjustment);
     
-    document.getElementById('calLose').textContent = loss + ' kcal';
-    document.getElementById('calMaintain').textContent = maintenance + ' kcal';
-    document.getElementById('calGain').textContent = gain + ' kcal';
+    document.getElementById('finalCalories').textContent = finalTarget;
     
     resultDiv.classList.remove('hide');
 }
@@ -484,9 +469,6 @@ function handleAddMeal(e) {
     const typeInput = document.getElementById('mealType');
     const nameInput = document.getElementById('mealName');
     const kcalInput = document.getElementById('mealKcal');
-    const proteinInput = document.getElementById('mealProtein');
-    const carbsInput = document.getElementById('mealCarbs');
-    const fatsInput = document.getElementById('mealFats');
     
     meals.push({
         id: Date.now().toString(),
@@ -494,70 +476,36 @@ function handleAddMeal(e) {
         time: timeInput.value,
         type: typeInput.value,
         name: nameInput.value.trim(),
-        kcal: Math.max(0, parseInt(kcalInput.value) || 0),
-        protein: Math.max(0, parseInt(proteinInput.value) || 0),
-        carbs: Math.max(0, parseInt(carbsInput.value) || 0),
-        fats: Math.max(0, parseInt(fatsInput.value) || 0)
+        kcal: Math.max(0, parseInt(kcalInput.value) || 0)
     });
     saveData();
     
     nameInput.value = '';
     kcalInput.value = '';
-    proteinInput.value = '';
-    carbsInput.value = '';
-    fatsInput.value = '';
     renderMealsList();
 }
 
 function renderMealsList() {
     const listDiv = document.getElementById('mealList');
     let totalKcal = 0;
-    let totalProtein = 0;
-    let totalCarbs = 0;
-    let totalFats = 0;
     
     meals.forEach(m => {
         totalKcal += m.kcal;
-        totalProtein += m.protein;
-        totalCarbs += m.carbs || 0;
-        totalFats += m.fats || 0;
     });
     
     document.getElementById('totalKcal').textContent = totalKcal;
-    document.getElementById('totalProtein').textContent = totalProtein;
-    document.getElementById('totalCarbs').textContent = totalCarbs;
-    document.getElementById('totalFats').textContent = totalFats;
     
     // Update Water Text Always
     let todayDate = new Date().toISOString().split('T')[0];
     let currentWater = waterData[todayDate] || 0;
     const waterElement = document.getElementById('waterCount');
-    if (waterElement) waterElement.textContent = `${currentWater} / 3000 ml`;
-    
-    // Update Chart.js Always with a tiny delay so DOM settles
-    setTimeout(() => {
-        const ctx = document.getElementById('macroChart')?.getContext('2d');
-        if (ctx) {
-            if (totalKcal > 0) {
-                if (window.macroChartInstance) window.macroChartInstance.destroy();
-                window.macroChartInstance = new Chart(ctx, {
-                    type: 'doughnut',
-                    data: {
-                        labels: ['Białko', 'Węgle', 'Tłuszcze'],
-                        datasets: [{
-                            data: [totalProtein, totalCarbs, totalFats],
-                            backgroundColor: ['#3b82f6', '#f59e0b', '#ef4444'],
-                            borderWidth: 0,
-                            hoverOffset: 4
-                        }]
-                    },
-                    options: { maintainAspectRatio: false, plugins: { legend: { labels: { color:'rgba(255,255,255,0.8)', boxWidth: 12, padding: 8 } } } }
-                });
-            } else {
-                if (window.macroChartInstance) window.macroChartInstance.destroy();
-            }
+    if (waterElement) {
+        if (currentWater >= 3000) {
+            waterElement.innerHTML = `${currentWater} / 3000 ml<br><span style="color:#10b981; font-size:0.75rem; display:block; margin-top:0.4rem; padding: 0.25rem; background:rgba(16, 185, 129, 0.1); border-radius:0.25rem; border:1px solid rgba(16, 185, 129, 0.2); font-weight:normal; animation: fadeIn 0.4s ease-out;">Cel osiągnięty! Świetna robota! 🏆</span>`;
+        } else {
+            waterElement.textContent = `${currentWater} / 3000 ml`;
         }
-    }, 50);
+    }
 
     if (meals.length === 0) {
         listDiv.innerHTML = '<p style="text-align:center; color: var(--text-muted); font-size: 0.875rem; margin-top:1rem;">Brak zapisanych posiłków.</p>';
@@ -575,7 +523,7 @@ function renderMealsList() {
                 <div class="item-info" style="width: 100%;">
                     <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.25rem;">🗓️ ${mDate} ${mTime ? '⏰ '+mTime : ''} &bull; ⏳ ${mType}</div>
                     <strong style="font-size:1rem;">${m.name}</strong>
-                    <div class="item-details" style="color:#10b981; margin-top:0.35rem;">🔥 ${m.kcal} kcal &bull; <span style="color:#60a5fa;">🥩 ${m.protein}g B</span> &bull; <span style="color:#f59e0b;">🌾 ${m.carbs || 0}g W</span> &bull; <span style="color:#ef4444;">🥑 ${m.fats || 0}g T</span></div>
+                    <div class="item-details" style="color:#10b981; margin-top:0.35rem;">🔥 ${m.kcal} kcal</div>
                 </div>
                 <button onclick="deleteMeal('${m.id}')" class="item-delete" style="position:absolute; top:0.75rem; right:0.75rem;">✕</button>
             </li>
