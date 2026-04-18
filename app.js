@@ -108,6 +108,7 @@ window.logout = function() {
     workouts = [];
     notes = [];
     progressData = [];
+    document.getElementById('floatingTimer').style.display = 'none';
     renderMain();
 }
 
@@ -167,6 +168,9 @@ window.triggerImport = triggerImport;
 window.handleImport = handleImport;
 
 function renderDashboard() {
+    document.getElementById('floatingTimer').style.display = 'flex';
+    if(document.getElementById('timerDisplay').textContent === "01:30") updateTimerDisplay(); // init just once safely
+    
     app.innerHTML = `
         <div class="glass-panel" style="animation: fadeIn 0.4s ease-out; position: relative;">
             <div style="position:absolute; top:1.25rem; right:1.25rem; display:flex; gap:0.5rem; align-items:center;">
@@ -857,5 +861,94 @@ window.deleteProgress = function(id) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Inject floating timer dynamically
+    const timerDiv = document.createElement('div');
+    timerDiv.id = 'floatingTimer';
+    timerDiv.style.cssText = 'display:none; position:fixed; bottom:20px; right:20px; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.1); border-radius:1rem; padding:0.5rem 0.75rem; flex-direction:column; align-items:center; z-index:1000; box-shadow:0 10px 25px rgba(0,0,0,0.5); transition:all 0.3s ease;';
+    timerDiv.innerHTML = `
+        <div style="font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.2rem;">⏱️ Przerwa</div>
+        <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.25rem;">
+            <button onclick="addTime(-15)" style="background:transparent; color:#9ca3af; border:none; cursor:pointer; font-size:1.2rem; min-width:30px;">-</button>
+            <span id="timerDisplay" style="font-size:1.6rem; font-weight:bold; font-family:monospace; color:#38bdf8; width:70px; text-align:center; transition: color 0.3s;">01:30</span>
+            <button onclick="addTime(15)" style="background:transparent; color:#9ca3af; border:none; cursor:pointer; font-size:1.2rem; min-width:30px;">+</button>
+        </div>
+        <div style="display:flex; gap:0.5rem; width: 100%;">
+            <button onclick="toggleTimer()" id="timerToggleBtn" style="flex:2; background:var(--primary); color:white; border:none; border-radius:0.5rem; padding:0.3rem; cursor:pointer; font-size:0.8rem; font-weight:bold;">Start</button>
+            <button onclick="resetTimer()" style="flex:1; background:rgba(239,68,68,0.2); color:#ef4444; border:1px solid rgba(239,68,68,0.3); border-radius:0.5rem; padding:0.3rem; cursor:pointer; font-size:0.8rem; font-weight:bold;">⏹</button>
+        </div>
+    `;
+    document.body.appendChild(timerDiv);
+    
     renderMain();
 });
+
+// --- TIMER LOGIC ---
+let timerInterval = null;
+let currentSeconds = 90; // Default 1:30
+let isTimerRunning = false;
+
+window.updateTimerDisplay = function() {
+    const mins = Math.floor(currentSeconds / 60).toString().padStart(2, '0');
+    const secs = (currentSeconds % 60).toString().padStart(2, '0');
+    document.getElementById('timerDisplay').textContent = `${mins}:${secs}`;
+    
+    // Change color if close to 0
+    if (currentSeconds <= 10) {
+        document.getElementById('timerDisplay').style.color = '#ef4444'; // Red
+    } else {
+        document.getElementById('timerDisplay').style.color = '#38bdf8'; // Blue
+    }
+}
+
+window.addTime = function(amount) {
+    if (!isTimerRunning) {
+        currentSeconds += amount;
+        if (currentSeconds < 15) currentSeconds = 15; // Min 15s
+        updateTimerDisplay();
+    }
+}
+
+window.toggleTimer = function() {
+    const btn = document.getElementById('timerToggleBtn');
+    if (isTimerRunning) {
+        clearInterval(timerInterval);
+        isTimerRunning = false;
+        btn.textContent = 'Start';
+        btn.style.background = 'var(--primary)';
+    } else {
+        if (currentSeconds <= 0) currentSeconds = 90; // Reset to 90s if started from 0
+        isTimerRunning = true;
+        btn.textContent = 'Pauza';
+        btn.style.background = '#f59e0b';
+        timerInterval = setInterval(() => {
+            currentSeconds--;
+            updateTimerDisplay();
+            
+            if (currentSeconds <= 0) {
+                clearInterval(timerInterval);
+                isTimerRunning = false;
+                btn.textContent = 'Start';
+                btn.style.background = 'var(--primary)';
+                
+                // Visual cue
+                const floatingTimer = document.getElementById('floatingTimer');
+                floatingTimer.style.boxShadow = "0 0 20px #ef4444";
+                document.getElementById('timerDisplay').style.color = '#ef4444';
+                setTimeout(() => {
+                   floatingTimer.style.boxShadow = "0 10px 25px rgba(0,0,0,0.5)"; 
+                   document.getElementById('timerDisplay').style.color = '#38bdf8';
+                }, 2000);
+            }
+        }, 1000);
+    }
+}
+
+window.resetTimer = function() {
+    clearInterval(timerInterval);
+    isTimerRunning = false;
+    currentSeconds = 90;
+    const btn = document.getElementById('timerToggleBtn');
+    btn.textContent = 'Start';
+    btn.style.background = 'var(--primary)';
+    updateTimerDisplay();
+}
