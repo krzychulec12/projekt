@@ -9,6 +9,7 @@ let meals = [];
 let notes = [];
 let progressData = [];
 let waterData = {};
+let targetKcal = 0;
 
 function loadData() {
     if (state.username) {
@@ -16,6 +17,7 @@ function loadData() {
         meals = JSON.parse(localStorage.getItem(`fitness_meals_${state.username}`)) || [];
         progressData = JSON.parse(localStorage.getItem(`fitness_progress_${state.username}`)) || [];
         waterData = JSON.parse(localStorage.getItem(`fitness_water_${state.username}`)) || {};
+        targetKcal = parseInt(localStorage.getItem(`fitness_targetKcal_${state.username}`)) || 0;
         
         const loadedNotes = localStorage.getItem(`fitness_notes_${state.username}`);
         if (loadedNotes) {
@@ -37,6 +39,7 @@ function saveData() {
         localStorage.setItem(`fitness_meals_${state.username}`, JSON.stringify(meals));
         localStorage.setItem(`fitness_notes_${state.username}`, JSON.stringify(notes));
         localStorage.setItem(`fitness_water_${state.username}`, JSON.stringify(waterData));
+        localStorage.setItem(`fitness_targetKcal_${state.username}`, targetKcal);
         try {
             localStorage.setItem(`fitness_progress_${state.username}`, JSON.stringify(progressData));
         } catch(e) {
@@ -109,10 +112,63 @@ window.switchTab = function(tabName) {
     renderDashboard();
 }
 
+function exportData() {
+    const dataObj = {
+        exercises,
+        meals,
+        notes,
+        progressData,
+        waterData,
+        targetKcal
+    };
+    const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataObj));
+    const dlAnchorElem = document.createElement('a');
+    dlAnchorElem.setAttribute("href", dataStr);
+    dlAnchorElem.setAttribute("download", `fitness_backup_${state.username}_${new Date().toISOString().split('T')[0]}.json`);
+    dlAnchorElem.click();
+}
+
+function triggerImport() {
+    document.getElementById('importFile').click();
+}
+
+function handleImport(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        try {
+            const imported = JSON.parse(e.target.result);
+            exercises = imported.exercises || [];
+            meals = imported.meals || [];
+            notes = imported.notes || [];
+            progressData = imported.progressData || [];
+            waterData = imported.waterData || {};
+            targetKcal = parseInt(imported.targetKcal) || 0;
+            saveData();
+            alert("Kopia zapasowa załadowana pomyślnie!");
+            renderDashboard();
+        } catch(err) {
+            alert("Błąd odczytu pliku JSON");
+        }
+    };
+    reader.readAsText(file);
+    event.target.value = ''; // reseting input
+}
+
+window.exportData = exportData;
+window.triggerImport = triggerImport;
+window.handleImport = handleImport;
+
 function renderDashboard() {
     app.innerHTML = `
         <div class="glass-panel" style="animation: fadeIn 0.4s ease-out; position: relative;">
-            <button onclick="logout()" style="position:absolute; top:1.25rem; right:1.25rem; background:transparent; border:1px solid rgba(239, 68, 68, 0.5); color:var(--danger); padding:0.4rem 0.8rem; border-radius:0.5rem; cursor:pointer; transition:all 0.2s; font-size:0.75rem;">Wyloguj</button>
+            <div style="position:absolute; top:1.25rem; right:1.25rem; display:flex; gap:0.5rem; align-items:center;">
+                <button onclick="triggerImport()" title="Wgraj kopię zapasową" style="background:transparent; border:1px solid rgba(255, 255, 255, 0.2); color:white; padding:0.4rem; border-radius:0.5rem; cursor:pointer; font-size:0.75rem;">📁 Wczytaj</button>
+                <button onclick="exportData()" title="Zapisz dane do pliku" style="background:transparent; border:1px solid rgba(16, 185, 129, 0.5); color:#10b981; padding:0.4rem; border-radius:0.5rem; cursor:pointer; font-size:0.75rem;">💾 Zapisz</button>
+                <button onclick="logout()" style="background:transparent; border:1px solid rgba(239, 68, 68, 0.5); color:var(--danger); padding:0.4rem 0.8rem; border-radius:0.5rem; cursor:pointer; font-size:0.75rem;">Wyloguj</button>
+            </div>
+            <input type="file" id="importFile" accept=".json" style="display:none;" onchange="handleImport(event)">
             <h1 style="text-align: left; margin-top: 0; font-size:1.5rem;">Cześć, ${state.username}!</h1>
             <p class="subtitle" style="text-align: left; margin-bottom: 1.5rem;">Twój panel fitness</p>
             
@@ -411,6 +467,9 @@ function calculateBMI() {
     const totalDailyEnergyExpenditure = bmr * activityMultiplier;
     const finalTarget = Math.round(totalDailyEnergyExpenditure + goalAdjustment);
     
+    targetKcal = finalTarget;
+    saveData();
+    
     document.getElementById('finalCalories').textContent = finalTarget;
     
     resultDiv.classList.remove('hide');
@@ -493,7 +552,17 @@ function renderMealsList() {
         totalKcal += m.kcal;
     });
     
-    document.getElementById('totalKcal').textContent = totalKcal;
+    // Target calculation wrapper update
+    const summaryDiv = document.getElementById('mealSummary');
+    if (summaryDiv) {
+        if (targetKcal > 0) {
+            let left = targetKcal - totalKcal;
+            let leftMsg = left >= 0 ? `🔥 Zostało ci: <strong style="color:#f59e0b;">${left} kcal</strong>` : `⚠️ Przekroczenie o: <strong style="color:var(--danger);">${Math.abs(left)} kcal</strong>`;
+            summaryDiv.innerHTML = `<strong style="color:var(--text-color);">Zjedzono: </strong><span id="totalKcal" style="color:#10b981; font-weight:bold;">${totalKcal}</span> kcal / <span style="font-size:0.8rem; color:var(--text-muted);">${targetKcal} kcal cel</span><br><div style="margin-top:0.4rem; font-size:0.85rem;">${leftMsg}</div>`;
+        } else {
+            summaryDiv.innerHTML = `<strong style="color:var(--text-color);">Zjedzono: </strong><span id="totalKcal" style="color:#10b981; font-weight:bold;">${totalKcal}</span> kcal<div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.3rem;">Oblicz swój Cel w Kalkulatorze BMI, aby zyskać licznik bilansu widoczny na żywo.</div>`;
+        }
+    }
     
     // Update Water Text Always
     let todayDate = new Date().toISOString().split('T')[0];
