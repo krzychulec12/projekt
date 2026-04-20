@@ -12,6 +12,16 @@ let waterData = {};
 let targetKcal = 0;
 let workouts = [];
 
+const exerciseDB = {
+    'Klatka piersiowa': ['Wyciskanie sztangi leżąc', 'Rozpiętki na hantlach', 'Wyciskanie na ławce skośnej', 'Pompki na poręczach', 'Pompki klasyczne', 'Maszyna (Fly)'],
+    'Plecy': ['Podciąganie na drążku', 'Martwy ciąg', 'Wiosłowanie sztangą', 'Ściąganie drążka wyciągu górnego', 'Wiosłowanie hantlem', 'Szrugsy'],
+    'Nogi': ['Przysiady ze sztangą', 'Wykroki', 'Wyciskanie na suwnicy', 'Prostowanie nóg na maszynie', 'Uginanie nóg leżąc', 'Martwy ciąg na prostych nogach', 'Wspięcia na łydki'],
+    'Barki': ['Wyciskanie Żołnierskie', 'Wznosy ramion bokiem', 'Wyciskanie hantli siedząc', 'Face pulls', 'Wznosy ramion przodem'],
+    'Biceps': ['Uginanie ramion ze sztangą', 'Uginanie z hantlami z rotacją', 'Uginanie młotkowe', 'Modlitewnik'],
+    'Triceps': ['Wyciskanie francuskie', 'Prostowanie ramion na wyciągu', 'Wyciskanie wąskim chwytem', 'Dipy'],
+    'Brzuch': ['Allahy', 'Deska (Plank)', 'Russian Twist', 'Spięcia brzucha leżąc', 'Wznosy nóg w zwisie']
+};
+
 function loadData() {
     if (state.username) {
         exercises = JSON.parse(localStorage.getItem(`fitness_exercises_${state.username}`)) || [];
@@ -179,18 +189,21 @@ function renderDashboard() {
                 <button onclick="logout()" style="background:transparent; border:1px solid rgba(239, 68, 68, 0.5); color:var(--danger); padding:0.4rem 0.8rem; border-radius:0.5rem; cursor:pointer; font-size:0.75rem;">Wyloguj</button>
             </div>
             <input type="file" id="importFile" accept=".json" style="display:none;" onchange="handleImport(event)">
-            <h1 style="text-align: left; margin-top: 0; font-size:1.5rem;">Cześć, ${state.username}!</h1>
-            <p class="subtitle" style="text-align: left; margin-bottom: 1.5rem;">Twój panel fitness</p>
             
-            <div class="tabs" style="flex-wrap: wrap;">
-                <button class="tab-btn ${state.activeTab === 'bmi' ? 'active' : ''}" onclick="switchTab('bmi')">BMI</button>
-                <button class="tab-btn ${state.activeTab === 'exercises' ? 'active' : ''}" onclick="switchTab('exercises')">Ćwiczenia</button>
-                <button class="tab-btn ${state.activeTab === 'meals' ? 'active' : ''}" onclick="switchTab('meals')">Posiłki</button>
-                <button class="tab-btn ${state.activeTab === 'notes' ? 'active' : ''}" onclick="switchTab('notes')">Notatki</button>
-                <button class="tab-btn ${state.activeTab === 'progress' ? 'active' : ''}" onclick="switchTab('progress')">Progres</button>
+            <h1 style="text-align: left; margin-top: 0; font-size:2rem; padding-left:1rem;">Cześć, ${state.username}!</h1>
+            <p class="subtitle" style="text-align: left; margin-bottom: 2.5rem; padding-left:1rem; font-size: 1rem;">Twój zaawansowany panel fitness</p>
+            
+            <div class="dashboard-layout">
+                <div class="tabs">
+                    <button class="tab-btn ${state.activeTab === 'bmi' ? 'active' : ''}" onclick="switchTab('bmi')">🥑 BMI & Cel</button>
+                    <button class="tab-btn ${state.activeTab === 'exercises' ? 'active' : ''}" onclick="switchTab('exercises')">🏋️ Ćwiczenia</button>
+                    <button class="tab-btn ${state.activeTab === 'meals' ? 'active' : ''}" onclick="switchTab('meals')">🍽️ Posiłki & Cardio</button>
+                    <button class="tab-btn ${state.activeTab === 'notes' ? 'active' : ''}" onclick="switchTab('notes')">📝 Notatki</button>
+                    <button class="tab-btn ${state.activeTab === 'progress' ? 'active' : ''}" onclick="switchTab('progress')">📈 Progres</button>
+                </div>
+                
+                <div id="tabContent" style="min-height: 400px;"></div>
             </div>
-            
-            <div id="tabContent"></div>
         </div>
     `;
 
@@ -273,19 +286,43 @@ function renderTabContent() {
                 <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1rem;">Dziennik Ćwiczeń</h2>
 
                 <form id="exerciseForm">
-                    <div class="input-group">
-                        <label for="exName">Nazwa ćwiczenia</label>
-                        <input type="text" id="exName" placeholder="np. Przysiady" required autocomplete="off">
+                    <div class="input-group" style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                        <div style="flex:1; min-width: 150px;">
+                            <label for="exGroup">Partia Ciała</label>
+                            <select id="exGroup" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit;">
+                                <option value="" disabled selected>Wybierz...</option>
+                                ${Object.keys(exerciseDB).map(grp => `<option value="${grp}">${grp}</option>`).join('')}
+                            </select>
+                        </div>
+                        <div style="flex:2; min-width: 200px;">
+                            <label for="exName">Ćwiczenie</label>
+                            <select id="exName" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit;">
+                                <option value="" disabled selected>Najpierw wybierz partię</option>
+                            </select>
+                        </div>
                     </div>
                     <div class="input-group">
                         <label for="exDetails">Serie / Powtórzenia</label>
-                        <input type="text" id="exDetails" placeholder="np. 3x10" required autocomplete="off">
+                        <input type="text" id="exDetails" placeholder="np. 3x10 lub Waga: 80kg" required autocomplete="off">
                     </div>
                     <button type="submit" class="btn-primary" style="background:linear-gradient(to right, #8b5cf6, #3b82f6);">Zapisz Wpis</button>
                 </form>
                 <div class="list-container" id="exerciseList"></div>
             </div>
         `;
+        
+        // Dynamika Selecta Grupy Ćwiczeń
+        document.getElementById('exGroup').addEventListener('change', function(e) {
+            const group = e.target.value;
+            const exNameSelect = document.getElementById('exName');
+            exNameSelect.innerHTML = '<option value="" disabled selected>Wybierz ćwiczenie...</option>';
+            if(exerciseDB[group]) {
+                exerciseDB[group].forEach(ex => {
+                    exNameSelect.innerHTML += `<option value="${ex}">${ex}</option>`;
+                });
+            }
+        });
+        
         document.getElementById('exerciseForm').addEventListener('submit', handleAddExercise);
         renderExercisesList();
     }
@@ -338,10 +375,22 @@ function renderTabContent() {
                         <label for="mealName">Nazwa posiłku</label>
                         <input type="text" id="mealName" placeholder="np. Owsianka z białkiem" required autocomplete="off">
                     </div>
-                    <div style="display:flex; gap:0.5rem; margin-bottom: 1.25rem;">
-                        <div style="flex:1;">
+                    <div style="display:flex; gap:0.5rem; margin-bottom: 1.25rem; flex-wrap:wrap;">
+                        <div style="flex:1; min-width:80px;">
                             <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Kcal</label>
-                            <input type="number" id="mealKcal" placeholder="450" min="0" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
+                            <input type="number" id="mealKcal" placeholder="450" min="0" required style="width:100%; border-radius:0.5rem; padding:0.75rem 0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.8rem;">
+                        </div>
+                        <div style="flex:1; min-width:80px;">
+                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">B(g)</label>
+                            <input type="number" id="mealP" placeholder="25" min="0" style="width:100%; border-radius:0.5rem; padding:0.75rem 0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.8rem;">
+                        </div>
+                        <div style="flex:1; min-width:80px;">
+                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">W(g)</label>
+                            <input type="number" id="mealC" placeholder="50" min="0" style="width:100%; border-radius:0.5rem; padding:0.75rem 0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.8rem;">
+                        </div>
+                        <div style="flex:1; min-width:80px;">
+                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">T(g)</label>
+                            <input type="number" id="mealF" placeholder="15" min="0" style="width:100%; border-radius:0.5rem; padding:0.75rem 0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.8rem;">
                         </div>
                     </div>
                     <button type="submit" class="btn-primary" style="background:linear-gradient(to right, #10b981, #059669);">Dodaj Posiłek</button>
@@ -550,6 +599,9 @@ function handleAddMeal(e) {
     const typeInput = document.getElementById('mealType');
     const nameInput = document.getElementById('mealName');
     const kcalInput = document.getElementById('mealKcal');
+    const pInput = document.getElementById('mealP');
+    const cInput = document.getElementById('mealC');
+    const fInput = document.getElementById('mealF');
     
     meals.push({
         id: Date.now().toString(),
@@ -557,12 +609,18 @@ function handleAddMeal(e) {
         time: timeInput.value,
         type: typeInput.value,
         name: nameInput.value.trim(),
-        kcal: Math.max(0, parseInt(kcalInput.value) || 0)
+        kcal: Math.max(0, parseInt(kcalInput.value) || 0),
+        p: Math.max(0, parseInt(pInput.value) || 0),
+        c: Math.max(0, parseInt(cInput.value) || 0),
+        f: Math.max(0, parseInt(fInput.value) || 0)
     });
     saveData();
     
     nameInput.value = '';
     kcalInput.value = '';
+    pInput.value = '';
+    cInput.value = '';
+    fInput.value = '';
     renderMealsList();
 }
 
@@ -590,13 +648,24 @@ function handleAddWorkout(e) {
 
 function renderMealsList() {
     const listDiv = document.getElementById('mealList');
-    let totalKcal = 0;
+    let totalKcal = 0, totalP = 0, totalC = 0, totalF = 0;
     let burnedKcal = 0;
     
-    meals.forEach(m => totalKcal += m.kcal);
+    meals.forEach(m => {
+        totalKcal += m.kcal;
+        totalP += m.p || 0;
+        totalC += m.c || 0;
+        totalF += m.f || 0;
+    });
     workouts.forEach(w => burnedKcal += w.kcal);
     
     let netKcal = totalKcal - burnedKcal;
+    let targetP = 0, targetC = 0, targetF = 0;
+    if (targetKcal > 0) {
+        targetP = Math.round((targetKcal * 0.3) / 4);
+        targetC = Math.round((targetKcal * 0.45) / 4);
+        targetF = Math.round((targetKcal * 0.25) / 9);
+    }
     
     // Target calculation wrapper update
     const summaryDiv = document.getElementById('mealSummary');
@@ -604,9 +673,52 @@ function renderMealsList() {
         if (targetKcal > 0) {
             let left = targetKcal - netKcal;
             let leftMsg = left >= 0 ? `🔥 Zostało ci: <strong style="color:#f59e0b;">${left} kcal</strong>` : `⚠️ Przekroczenie o: <strong style="color:var(--danger);">${Math.abs(left)} kcal</strong>`;
-            summaryDiv.innerHTML = `<strong style="color:var(--text-color);">Zjedzono bilansowo: </strong><span id="totalKcal" style="color:#10b981; font-weight:bold;">${netKcal}</span> kcal / <span style="font-size:0.8rem; color:var(--text-muted);">${targetKcal} kcal cel</span><br><div style="margin-top:0.4rem; font-size:0.85rem;">${leftMsg} ${burnedKcal > 0 ? `(Odzyskano 🏃+${burnedKcal} kcal)` : ''}</div>`;
+            
+            let macroHtml = `
+                <div style="display:flex; justify-content:space-around; align-items:center; margin-top:1rem; padding-top:1rem; border-top:1px solid rgba(255,255,255,0.1);">
+                    <div style="width: 140px; height: 140px;"><canvas id="macroChart"></canvas></div>
+                    <div style="text-align:left; font-size:0.85rem;">
+                        <div style="color:#3b82f6; margin-bottom:0.25rem;">🔵 Białko: ${totalP}g / ${targetP}g</div>
+                        <div style="color:#10b981; margin-bottom:0.25rem;">🟢 Węglowodany: ${totalC}g / ${targetC}g</div>
+                        <div style="color:#f59e0b;">🟠 Tłuszcze: ${totalF}g / ${targetF}g</div>
+                    </div>
+                </div>
+            `;
+            
+            summaryDiv.innerHTML = `<strong style="color:var(--text-color);">Zjedzono bilansowo: </strong><span id="totalKcal" style="color:#10b981; font-weight:bold;">${netKcal}</span> kcal / <span style="font-size:0.8rem; color:var(--text-muted);">${targetKcal} kcal cel</span><br><div style="margin-top:0.4rem; font-size:0.85rem;">${leftMsg} ${burnedKcal > 0 ? `(Odzyskano 🏃+${burnedKcal} kcal)` : ''}</div> ${macroHtml}`;
+            
+            // Render Chart
+            setTimeout(() => {
+                const ctx = document.getElementById('macroChart')?.getContext('2d');
+                if (ctx) {
+                    if(window.macroChartInstance) window.macroChartInstance.destroy();
+                    window.macroChartInstance = new Chart(ctx, {
+                        type: 'doughnut',
+                        data: {
+                            labels: ['Białko', 'Węglowodany', 'Tłuszcze', 'Pozostało'],
+                            datasets: [{
+                                data: [
+                                    Math.min(totalP, targetP), 
+                                    Math.min(totalC, targetC), 
+                                    Math.min(totalF, targetF), 
+                                    Math.max(0, targetP - totalP + targetC - totalC + targetF - totalF)
+                                ],
+                                backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', 'rgba(255,255,255,0.05)'],
+                                borderWidth: 0
+                            }]
+                        },
+                        options: {
+                            responsive: true,
+                            maintainAspectRatio: false,
+                            cutout: '70%',
+                            plugins: { legend: { display: false } }
+                        }
+                    });
+                }
+            }, 50);
+
         } else {
-            summaryDiv.innerHTML = `<strong style="color:var(--text-color);">Zjedzono bilansowo: </strong><span id="totalKcal" style="color:#10b981; font-weight:bold;">${netKcal}</span> kcal<div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.3rem;">Oblicz swój Cel w Kalkulatorze BMI, aby zyskać licznik bilansu widoczny na żywo.</div>`;
+            summaryDiv.innerHTML = `<strong style="color:var(--text-color);">Zjedzono bilansowo: </strong><span id="totalKcal" style="color:#10b981; font-weight:bold;">${netKcal}</span> kcal<div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.3rem;">Oblicz swój Cel w Kalkulatorze BMI, aby zyskać licznik bilansu widoczny na żywo oraz estymację Makroskładników.</div>`;
         }
     }
     
@@ -656,7 +768,12 @@ function renderMealsList() {
                     <div class="item-info" style="width: 100%;">
                         <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.25rem;">🗓️ ${mDate} ${mTime ? '⏰ '+mTime : ''} &bull; ⏳ ${mType}</div>
                         <strong style="font-size:1rem;">${item.name}</strong>
-                        <div class="item-details" style="color:#10b981; margin-top:0.35rem;">🔥 Spożyto ${item.kcal} kcal</div>
+                        <div class="item-details" style="margin-top:0.35rem;">
+                            <span style="color:#10b981; font-weight:bold; margin-right:0.5rem;">🔥 Spożyto ${item.kcal} kcal</span>
+                            <span style="color:#3b82f6; margin-right:0.3rem;">B:${item.p||0}g</span>
+                            <span style="color:#10b981; margin-right:0.3rem;">W:${item.c||0}g</span>
+                            <span style="color:#f59e0b;">T:${item.f||0}g</span>
+                        </div>
                     </div>
                     <button onclick="deleteMeal('${item.id}')" class="item-delete" style="position:absolute; top:0.75rem; right:0.75rem;">✕</button>
                 </li>
