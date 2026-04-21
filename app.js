@@ -825,13 +825,17 @@ function renderMealsList() {
     let totalKcal = 0, totalP = 0, totalC = 0, totalF = 0;
     let burnedKcal = 0;
     
-    meals.forEach(m => {
+    const todayDate = new Date().toISOString().split('T')[0];
+    const mealsToday = meals.filter(m => (m.date || '') === todayDate);
+    const workoutsToday = workouts.filter(w => (w.date || '') === todayDate);
+
+    mealsToday.forEach(m => {
         totalKcal += m.kcal;
         totalP += m.p || 0;
         totalC += m.c || 0;
         totalF += m.f || 0;
     });
-    workouts.forEach(w => burnedKcal += w.kcal);
+    workoutsToday.forEach(w => burnedKcal += w.kcal);
     
     let netKcal = totalKcal - burnedKcal;
     let targetP = 0, targetC = 0, targetF = 0;
@@ -922,14 +926,14 @@ function renderMealsList() {
 
     let html = '';
     
-    if (meals.length === 0 && workouts.length === 0) {
-        listDiv.innerHTML = '<p style="text-align:center; color: var(--text-muted); font-size: 0.875rem; margin-top:1rem;">Brak wpisów dla tego dziennika.</p>';
+    if (mealsToday.length === 0 && workoutsToday.length === 0) {
+        listDiv.innerHTML = '<p style="text-align:center; color: var(--text-muted); font-size: 0.875rem; margin-top:1rem;">Brak wpisów dla dzisiejszego dnia.</p>';
         return;
     }
     
     let mixedItems = [];
-    meals.forEach(m => mixedItems.push({ ...m, isWorkout: false }));
-    workouts.forEach(w => mixedItems.push({ ...w, isWorkout: true }));
+    mealsToday.forEach(m => mixedItems.push({ ...m, isWorkout: false }));
+    workoutsToday.forEach(w => mixedItems.push({ ...w, isWorkout: true }));
     // Sort by id (timestamp mostly) so recent enters show bottom
     mixedItems.sort((a,b) => parseInt(a.id) - parseInt(b.id));
 
