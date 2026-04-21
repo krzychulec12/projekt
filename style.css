@@ -1,22 +1,30 @@
 :root {
     --bg-color: #0f172a;
-    --glass-bg: rgba(255, 255, 255, 0.05);
+    --glass-bg: rgba(30, 41, 59, 0.7);
     --glass-border: rgba(255, 255, 255, 0.1);
-    --text-color: #f8fafc;
+    --text-color: #f1f5f9;
     --text-muted: #94a3b8;
     --primary: #3b82f6;
     --primary-hover: #2563eb;
-    --danger: #ef4444;
+    --danger: #f43f5e;
+    --input-bg: rgba(15, 23, 42, 0.6);
+    --input-color: #f1f5f9;
+    --panel-bg: rgba(30, 41, 59, 0.5);
+    --card-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.3), 0 10px 10px -5px rgba(0, 0, 0, 0.3);
 }
 
 [data-theme="light"] {
-    --bg-color: #e2e8f0;
-    --glass-bg: rgba(255, 255, 255, 0.6);
-    --glass-border: rgba(0, 0, 0, 0.1);
-    --text-color: #0f172a;
-    --text-muted: #475569;
-    --primary: #0284c7;
-    --primary-hover: #0369a1;
+    --bg-color: #f8fafc;
+    --glass-bg: rgba(255, 255, 255, 0.9);
+    --glass-border: rgba(0, 0, 0, 0.08);
+    --text-color: #1e293b;
+    --text-muted: #64748b;
+    --primary: #2563eb;
+    --primary-hover: #1d4ed8;
+    --input-bg: #ffffff;
+    --input-color: #1e293b;
+    --panel-bg: #f1f5f9;
+    --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
 }
 
 * {
@@ -58,12 +66,12 @@ body {
 
 .glass-panel {
     background: var(--glass-bg);
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
     border: 1px solid var(--glass-border);
     border-radius: 1rem;
     padding: 2rem;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+    box-shadow: var(--card-shadow);
     animation: fadeIn 0.4s ease-out;
 }
 
@@ -97,21 +105,32 @@ h1 {
     color: var(--text-muted);
 }
 
-.input-group input {
+.input-group input,
+.input-group select,
+.input-group textarea,
+.input-field {
     width: 100%;
     padding: 0.75rem 1rem;
     border-radius: 0.5rem;
     border: 1px solid var(--glass-border);
-    background: rgba(0, 0, 0, 0.2);
-    color: var(--text-color);
+    background: var(--input-bg);
+    color: var(--input-color);
     font-family: inherit;
     font-size: 1rem;
     outline: none;
     transition: all 0.2s ease-in-out;
 }
 
+.input-label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    color: var(--text-muted);
+}
+
 .input-group input:focus,
-.input-group textarea:focus {
+.input-group textarea:focus,
+.input-field:focus {
     border-color: var(--primary);
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.3);
 }
@@ -183,7 +202,7 @@ h1 {
     display: flex;
     flex-direction: column;
     gap: 0.5rem;
-    background: rgba(0, 0, 0, 0.2);
+    background: var(--panel-bg);
     padding: 0.75rem;
     border-radius: 0.75rem;
     height: 100%;
@@ -208,9 +227,9 @@ h1 {
 }
 
 .tab-btn.active {
-    background: rgba(255, 255, 255, 0.1);
-    color: var(--text-color);
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    background: var(--primary);
+    color: white;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
 }
 
 /* Elementy Dzienników (Ćwiczenia/Posiłki) */
@@ -254,9 +273,40 @@ h1 {
     color: var(--danger);
 }
 
+.card-sub {
+    background: var(--panel-bg);
+    border-radius: 0.75rem;
+    padding: 1.5rem;
+    border: 1px solid var(--glass-border);
+    margin-bottom: 1.5rem;
+    transition: all 0.3s ease;
+}
+
+.card-sub:hover {
+    transform: translateY(-4px);
+    box-shadow: var(--card-shadow);
+    border-color: var(--primary);
+}
+
+.macro-tag {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-weight: 500;
+}
+
+.text-blue { color: #3b82f6; }
+.text-green { color: #10b981; }
+.text-orange { color: #f59e0b; }
+
 @keyframes fadeIn {
     from { opacity: 0; transform: translateY(10px); }
     to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(10px); }
 }
 
 @keyframes fadeOut {

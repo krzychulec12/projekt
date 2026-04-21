@@ -186,28 +186,7 @@ window.toggleTheme = function() {
     renderDashboard();
 };
 
-function generateStreakHtml() {
-    let html = '<div style="display:flex; gap:0.25rem; align-items:center;" title="Twój Nawyk Nawadnania (ostatnie 7 dni)">';
-    for(let i=6; i>=0; i--) {
-        let d = new Date();
-        d.setDate(d.getDate() - i);
-        let dateStr = d.toISOString().split('T')[0];
-        let w = waterData[dateStr] || 0;
-        let isSuccess = w >= 3000;
-        let color = isSuccess ? '#10b981' : 'rgba(255,255,255,0.1)';
-        let border = isSuccess ? '#059669' : 'rgba(255,255,255,0.2)';
-        
-        // For Light Mode adjustments safely:
-        if (!isSuccess && activeTheme === 'light') {
-            color = 'rgba(0,0,0,0.05)';
-            border = 'rgba(0,0,0,0.1)';
-        }
-        
-        html += `<div style="width:12px; height:12px; border-radius:50%; background:${color}; border:1px solid ${border};"></div>`;
-    }
-    html += '</div>';
-    return html;
-}
+
 
 function renderDashboard() {
     document.getElementById('floatingTimer').style.display = 'flex';
@@ -216,24 +195,22 @@ function renderDashboard() {
     app.innerHTML = `
         <div class="glass-panel" style="animation: fadeIn 0.4s ease-out; position: relative;">
             <div style="position:absolute; top:1.25rem; right:1.25rem; display:flex; gap:0.5rem; align-items:center;">
-                <button onclick="toggleTheme()" title="Zmień motyw" style="background:transparent; border:1px solid rgba(255, 255, 255, 0.2); color:var(--text-color); padding:0.4rem; border-radius:0.5rem; cursor:pointer; font-size:1rem;">${activeTheme === 'dark' ? '🌞' : '🌙'}</button>
-                <button onclick="triggerImport()" title="Wgraj kopię zapasową" style="background:transparent; border:1px solid rgba(255, 255, 255, 0.2); color:var(--text-color); padding:0.4rem; border-radius:0.5rem; cursor:pointer; font-size:0.75rem;">📁 Wczytaj</button>
+                <button onclick="toggleTheme()" title="Zmień motyw" style="background:transparent; border:1px solid var(--glass-border); color:var(--text-color); padding:0.4rem; border-radius:0.5rem; cursor:pointer; font-size:1rem;">${activeTheme === 'dark' ? '🌞' : '🌙'}</button>
+                <button onclick="triggerImport()" title="Wgraj kopię zapasową" style="background:transparent; border:1px solid var(--glass-border); color:var(--text-color); padding:0.4rem; border-radius:0.5rem; cursor:pointer; font-size:0.75rem;">📁 Wczytaj</button>
                 <button onclick="exportData()" title="Zapisz dane do pliku" style="background:transparent; border:1px solid rgba(16, 185, 129, 0.5); color:#10b981; padding:0.4rem; border-radius:0.5rem; cursor:pointer; font-size:0.75rem;">💾 Zapisz</button>
                 <button onclick="logout()" style="background:transparent; border:1px solid rgba(239, 68, 68, 0.5); color:var(--danger); padding:0.4rem 0.8rem; border-radius:0.5rem; cursor:pointer; font-size:0.75rem;">Wyloguj</button>
             </div>
             <input type="file" id="importFile" accept=".json" style="display:none;" onchange="handleImport(event)">
             
             <h1 style="text-align: left; margin-top: 0; font-size:2rem; padding-left:1rem;">Cześć, ${state.username}!</h1>
-            <div style="display:flex; gap:1.5rem; align-items:center; margin-bottom: 2.5rem; padding-left:1rem;">
-                <p class="subtitle" style="margin-bottom:0; font-size: 1rem;">Twój zaawansowany panel fitness</p>
-                ${generateStreakHtml()}
-            </div>
+            <p class="subtitle" style="text-align: left; margin-bottom: 2.5rem; padding-left:1rem; font-size: 1rem;">Twój zaawansowany panel fitness</p>
             
             <div class="dashboard-layout">
                 <div class="tabs">
                     <button class="tab-btn ${state.activeTab === 'bmi' ? 'active' : ''}" onclick="switchTab('bmi')">🥑 BMI & Cel</button>
                     <button class="tab-btn ${state.activeTab === 'exercises' ? 'active' : ''}" onclick="switchTab('exercises')">🏋️ Ćwiczenia</button>
                     <button class="tab-btn ${state.activeTab === 'meals' ? 'active' : ''}" onclick="switchTab('meals')">🍽️ Posiłki & Cardio</button>
+                    <button class="tab-btn ${state.activeTab === 'supplements' ? 'active' : ''}" onclick="switchTab('supplements')">💊 Suplementacja</button>
                     <button class="tab-btn ${state.activeTab === 'notes' ? 'active' : ''}" onclick="switchTab('notes')">📝 Notatki</button>
                     <button class="tab-btn ${state.activeTab === 'progress' ? 'active' : ''}" onclick="switchTab('progress')">📈 Progres</button>
                 </div>
@@ -252,74 +229,74 @@ function renderTabContent() {
     if (state.activeTab === 'bmi') {
         contentDiv.innerHTML = `
             <div class="bmi-calculator" style="animation: fadeIn 0.3s ease-out;">
-                <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1rem;">Kalkulator BMI i Kalorii</h2>
+                <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1.5rem;">Kalkulator BMI i Kalorii</h2>
                 
-                <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+                <div style="display:flex; gap:1rem; margin-bottom:1rem;">
                     <div style="flex:1;">
-                        <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Płeć</label>
-                        <select id="gender" style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit;">
+                        <label class="input-label">Płeć</label>
+                        <select id="gender" class="input-field">
                             <option value="male">Mężczyzna</option>
                             <option value="female">Kobieta</option>
                         </select>
                     </div>
                     <div style="flex:1;">
-                        <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Wiek</label>
-                        <input type="number" id="age" placeholder="np. 25" min="10" max="100" style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
+                        <label class="input-label">Wiek</label>
+                        <input type="number" id="age" placeholder="np. 25" min="10" max="100" class="input-field">
                     </div>
                 </div>
 
-                <div style="display:flex; gap:0.5rem; margin-bottom:1rem;">
+                <div style="display:flex; gap:1rem; margin-bottom:1rem;">
                     <div style="flex:1;">
-                        <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Wzrost (cm)</label>
-                        <input type="number" id="height" placeholder="np. 180" min="50" max="250" style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
+                        <label class="input-label">Wzrost (cm)</label>
+                        <input type="number" id="height" placeholder="np. 180" min="50" max="250" class="input-field">
                     </div>
                     <div style="flex:1;">
-                        <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Waga (kg)</label>
-                        <input type="number" id="weight" placeholder="np. 75" min="20" max="300" step="0.1" style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
+                        <label class="input-label">Waga (kg)</label>
+                        <input type="number" id="weight" placeholder="np. 75" min="20" max="300" step="0.1" class="input-field">
                     </div>
                 </div>
                 
                 <div style="margin-bottom:1rem;">
-                    <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Poziom aktywności (w ciągu dnia)</label>
-                    <select id="activity" style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit;">
-                        <option value="1.2">Brak aktywności (siedzący tryb życia)</option>
-                        <option value="1.375">Niska aktywność (trening 1-3 razy w tyg.)</option>
-                        <option value="1.55">Umiarkowana (trening 3-5 razy w tyg.)</option>
-                        <option value="1.725">Wysoka aktywność (trening codziennie)</option>
-                        <option value="1.9">Bardzo wysoka (fizyczna praca + trening)</option>
+                    <label class="input-label">Poziom aktywności</label>
+                    <select id="activity" class="input-field">
+                        <option value="1.2">Brak aktywności</option>
+                        <option value="1.375">Niska aktywność</option>
+                        <option value="1.55">Umiarkowana</option>
+                        <option value="1.725">Wysoka aktywność</option>
+                        <option value="1.9">Bardzo wysoka</option>
                     </select>
                 </div>
                 
-                <div style="margin-bottom:1rem;">
-                    <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Twój Cel</label>
-                    <select id="goal" style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit;">
-                        <option value="-500">Chcę schudnąć (Redukcja, ok. -0.5kg / tyg.)</option>
-                        <option value="0">Chcę utrzymać masę ciała</option>
-                        <option value="300">Chcę zbudować masę (Nadwyżka kaloryczna)</option>
+                <div style="margin-bottom:1.5rem;">
+                    <label class="input-label">Twój Cel</label>
+                    <select id="goal" class="input-field">
+                        <option value="-500">Redukcja (-0.5kg/tydz.)</option>
+                        <option value="0">Utrzymanie masy</option>
+                        <option value="300">Budowa masy (+nadwyżka)</option>
                     </select>
                 </div>
                 
                 <!-- US Navy BF Toggle -->
-                <div style="margin-bottom: 1.5rem; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 0.5rem; border: 1px dashed rgba(255,255,255,0.2);">
+                <div style="margin-bottom: 1.5rem; background: var(--input-bg); padding: 1.25rem; border-radius: 0.75rem; border: 1px dashed var(--glass-border);">
                     <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="document.getElementById('navyFields').classList.toggle('hide')">
-                        <span style="font-size:0.9rem; font-weight:bold;">Wylicz Tkankę Tłuszczową (US Navy Method) 📏</span>
-                        <small style="color:var(--text-muted);">Pokaż ▼</small>
+                        <span style="font-size:0.95rem; font-weight:600; color:var(--text-color);">Wylicz Tkankę Tłuszczową (US Navy) 📏</span>
+                        <small style="color:var(--text-muted); font-size:0.75rem;">Pokaż ▼</small>
                     </div>
-                    <div id="navyFields" class="hide" style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
-                        <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
+                    <div id="navyFields" class="hide" style="margin-top: 1rem; border-top: 1px solid var(--glass-border); padding-top: 1rem;">
+                        <div style="display:flex; gap:1rem; margin-bottom:1rem;">
                             <div style="flex:1;">
-                                <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Obwód Pasa (cm)</label>
-                                <input type="number" id="waistCirc" placeholder="Na pępku" step="0.1" style="width:100%; border-radius:0.5rem; padding:0.75rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
+                                <label class="input-label">Pas (cm)</label>
+                                <input type="number" id="waistCirc" placeholder="Na pępku" step="0.1" class="input-field">
                             </div>
                             <div style="flex:1;">
-                                <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Obwód Szyi (cm)</label>
-                                <input type="number" id="neckCirc" placeholder="Poniżej jabłka Adama" step="0.1" style="width:100%; border-radius:0.5rem; padding:0.75rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
+                                <label class="input-label">Szyja (cm)</label>
+                                <input type="number" id="neckCirc" placeholder="Pod krtanią" step="0.1" class="input-field">
                             </div>
                         </div>
-                        <div style="display:flex; gap:0.5rem;" id="hipFieldContainer" class="hide">
+                        <div style="display:flex; gap:1rem;" id="hipFieldContainer" class="hide">
                             <div style="flex:1;">
-                                <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Obwód Bioder (cm)</label>
-                                <input type="number" id="hipCirc" placeholder="Najszerszy punkt na pośladkach" step="0.1" style="width:100%; border-radius:0.5rem; padding:0.75rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
+                                <label class="input-label">Biodra (cm)</label>
+                                <input type="number" id="hipCirc" placeholder="Najszerszy punkt" step="0.1" class="input-field">
                             </div>
                         </div>
                     </div>
@@ -327,16 +304,16 @@ function renderTabContent() {
 
                 <button id="calcBmiBtn" class="btn-primary">Oblicz Twój Plan</button>
                 
-                <div id="bmiResult" class="bmi-result hide" style="margin-top: 1.5rem;">
+                <div id="bmiResult" class="bmi-result hide" style="margin-top: 2rem;">
                     <div id="bmiValue" class="bmi-value">--</div>
                     <div id="bmiStatus" class="bmi-status">--</div>
-                    <div id="navyBfResult" style="margin-top:0.5rem; color:#f59e0b; font-weight:bold; font-size:1.1rem; display:none;"></div>
+                    <div id="navyBfResult" style="margin-top:0.75rem; color:var(--primary); font-weight:bold; font-size:1.1rem; display:none;"></div>
                     
                     <hr style="border:0; border-top: 1px solid var(--glass-border); margin: 1.5rem 0;">
                     
-                    <h3 style="font-size: 1.1rem; margin-top:0; color:var(--text-muted);">Zalecane kalorie dla Twojego celu:</h3>
+                    <h3 style="font-size: 1rem; margin-top:0; color:var(--text-muted); font-weight:500;">Zalecane kalorie dla Twojego celu:</h3>
                     <div style="text-align:center; padding: 0.5rem;">
-                        <strong id="finalCalories" style="color:#10b981; font-size:2rem; line-height:1;">--</strong> <span style="color:#10b981; font-size:1rem;">kcal / dobę</span>
+                        <strong id="finalCalories" style="color:var(--primary); font-size:2.5rem; line-height:1;">--</strong> <span style="color:var(--primary); font-size:1rem; font-weight:600;">kcal / dobę</span>
                     </div>
                 </div>
             </div>
@@ -356,31 +333,31 @@ function renderTabContent() {
     else if (state.activeTab === 'exercises') {
         contentDiv.innerHTML = `
             <div class="exercise-logger" style="animation: fadeIn 0.3s ease-out;">
-                <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1rem;">Dziennik Ćwiczeń</h2>
+                <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1.5rem;">Dziennik Ćwiczeń</h2>
 
                 <form id="exerciseForm">
-                    <div class="input-group" style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                    <div style="display:flex; gap:1rem; flex-wrap:wrap; margin-bottom:1.25rem;">
                         <div style="flex:1; min-width: 150px;">
-                            <label for="exGroup">Partia Ciała</label>
-                            <select id="exGroup" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit;">
+                            <label class="input-label">Partia Ciała</label>
+                            <select id="exGroup" required class="input-field">
                                 <option value="" disabled selected>Wybierz...</option>
                                 ${Object.keys(exerciseDB).map(grp => `<option value="${grp}">${grp}</option>`).join('')}
                             </select>
                         </div>
                         <div style="flex:2; min-width: 200px;">
-                            <label for="exName">Ćwiczenie</label>
-                            <select id="exName" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit;">
+                            <label class="input-label">Ćwiczenie</label>
+                            <select id="exName" required class="input-field">
                                 <option value="" disabled selected>Najpierw wybierz partię</option>
                             </select>
                         </div>
                     </div>
                     <div class="input-group">
-                        <label for="exDetails">Serie / Powtórzenia</label>
-                        <input type="text" id="exDetails" placeholder="np. 3x10 lub Waga: 80kg" autocomplete="off">
+                        <label class="input-label">Serie / Powtórzenia / Ciężar</label>
+                        <input type="text" id="exDetails" placeholder="np. 3x10 80kg" class="input-field" autocomplete="off">
                     </div>
-                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
-                        <button type="submit" class="btn-primary" style="flex:2; background:linear-gradient(to right, #8b5cf6, #3b82f6);">Zapisz Wpis</button>
-                        <button type="button" id="btnGenerateWorkout" class="btn-primary" style="flex:1; background:rgba(255,255,255,0.1); color:var(--text-color); border:1px solid rgba(255,255,255,0.3);" title="Wybierz Partię i kliknij!">🎲 Wylosuj Trening</button>
+                    <div style="display:flex; gap:0.75rem; flex-wrap:wrap;">
+                        <button type="submit" class="btn-primary" style="flex:2; background:var(--primary);">Zapisz Wpis</button>
+                        <button type="button" id="btnGenerateWorkout" class="btn-primary" style="flex:1; background:var(--panel-bg); color:var(--text-color); border:1px solid var(--glass-border);" title="Wybierz Partię i kliknij!">🎲 Wylosuj</button>
                     </div>
                 </form>
                 <div class="list-container" id="exerciseList"></div>
@@ -429,38 +406,35 @@ function renderTabContent() {
         const now = new Date();
         const timeStr = now.getHours().toString().padStart(2, '0') + ':' + now.getMinutes().toString().padStart(2, '0');
         
-        let currentWater = waterData[today] || 0; // Fetch immediately
-        
         contentDiv.innerHTML = `
             <div class="meal-logger" style="animation: fadeIn 0.3s ease-out;">
-                <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1rem;">Baza Posiłków</h2>
+                <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1.5rem;">Dziennik Żywienia</h2>
                 
-                <!-- NEW PANEL SIDE BY SIDE -->
                 <div style="display: flex; gap: 1rem; margin-bottom: 1.5rem; flex-wrap: wrap;">
-                    <div style="flex: 1; min-width: 140px; background: rgba(14, 165, 233, 0.1); border: 1px solid rgba(14, 165, 233, 0.4); border-radius: 0.5rem; padding: 1rem; display: flex; flex-direction: column; justify-content: center; align-items: center; text-align: center;">
-                        <h3 style="font-size: 1rem; color: #38bdf8; margin-top: 0; margin-bottom: 0.25rem;">Woda 💧</h3>
-                        <p style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.75rem; min-height: 40px; display: flex; flex-direction: column; justify-content: center;">Dzisiaj: <br><strong id="waterCount" style="color:white; font-size:1.1rem; display:inline-block; margin-top:0.25rem;">--</strong></p>
-                        <div style="display:flex; justify-content:center; gap:0.25rem; width: 100%;">
-                            <button onclick="addWater(-250)" style="flex:0.5; background:rgba(255,255,255,0.1); color:white; border:1px solid rgba(255,255,255,0.2); border-radius:0.5rem; padding:0.25rem; cursor:pointer;" title="Skasuj szklankę">-</button>
-                            <button onclick="addWater(250)" class="btn-primary" style="flex:2; background:linear-gradient(to right, #0ea5e9, #0284c7); padding:0.5rem 0.25rem; margin:0; font-size:0.8rem;">+ Szklanka</button>
+                    <div class="card-sub" style="flex: 1; min-width: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; margin-bottom:0; background: var(--panel-bg);">
+                        <h3 style="font-size: 1rem; color: var(--primary); margin-top: 0; margin-bottom: 0.5rem;">Nawodnienie 💧</h3>
+                        <p style="font-size: 1.25rem; font-weight:700; color: var(--text-color); margin-bottom: 1rem;" id="waterCount">--</p>
+                        <div style="display:flex; justify-content:center; gap:0.5rem; width: 100%;">
+                            <button onclick="addWater(-250)" class="btn-primary" style="flex:1; background:var(--glass-bg); color:var(--text-color); border:1px solid var(--glass-border); padding:0.5rem; margin:0;">-</button>
+                            <button onclick="addWater(250)" class="btn-primary" style="flex:2; margin:0; padding:0.5rem;">+ 250ml</button>
                         </div>
                     </div>
-                    
                 </div>
 
-                <form id="mealForm" style="background: rgba(0,0,0,0.15); padding: 1rem; border-radius: 0.5rem; border: 1px solid var(--glass-border); margin-bottom: 1.5rem;">
-                    <div style="display:flex; gap:0.5rem; margin-bottom: 0.75rem;">
-                        <div style="flex:1;">
-                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Data</label>
-                            <input type="date" id="mealDate" value="${today}" required style="width:100%; border-radius:0.5rem; padding:0.75rem 0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit; font-size:0.8rem;">
+                <form id="mealForm" class="card-sub">
+                    <h3 style="font-size: 1rem; margin-top: 0; margin-bottom: 1rem; color:var(--text-color);">🍲 Dodaj Posiłek</h3>
+                    <div style="display:flex; gap:0.75rem; margin-bottom: 1rem; flex-wrap:wrap;">
+                        <div style="flex:1; min-width:120px;">
+                            <label class="input-label">Data</label>
+                            <input type="date" id="mealDate" value="${today}" required class="input-field">
                         </div>
-                        <div style="flex:1;">
-                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Godz.</label>
-                            <input type="time" id="mealTime" value="${timeStr}" required style="width:100%; border-radius:0.5rem; padding:0.75rem 0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit; font-size:0.8rem;">
+                        <div style="flex:1; min-width:100px;">
+                            <label class="input-label">Godzina</label>
+                            <input type="time" id="mealTime" value="${timeStr}" required class="input-field">
                         </div>
-                        <div style="flex:1;">
-                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Typ</label>
-                            <select id="mealType" style="width:100%; border-radius:0.5rem; padding:0.75rem 0.25rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit; font-size:0.8rem;">
+                        <div style="flex:1; min-width:120px;">
+                            <label class="input-label">Typ</label>
+                            <select id="mealType" class="input-field">
                                 <option value="Śniadanie">Śniadanie</option>
                                 <option value="II Śniadanie">II Śniadanie</option>
                                 <option value="Obiad">Obiad</option>
@@ -469,42 +443,42 @@ function renderTabContent() {
                             </select>
                         </div>
                     </div>
-                    <div class="input-group" style="margin-bottom:0.75rem;">
-                        <label for="mealName">Nazwa posiłku</label>
-                        <input type="text" id="mealName" placeholder="np. Owsianka z białkiem" required autocomplete="off">
+                    <div class="input-group">
+                        <label class="input-label">Nazwa Posiłku</label>
+                        <input type="text" id="mealName" placeholder="np. Omlet z warzywami" required class="input-field" autocomplete="off">
                     </div>
-                    <div style="display:flex; gap:0.5rem; margin-bottom: 1.25rem; flex-wrap:wrap;">
+                    <div style="display:flex; gap:0.75rem; margin-bottom: 1.5rem; flex-wrap:wrap;">
                         <div style="flex:1; min-width:80px;">
-                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Kcal</label>
-                            <input type="number" id="mealKcal" placeholder="450" min="0" required style="width:100%; border-radius:0.5rem; padding:0.75rem 0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.8rem;">
+                            <label class="input-label">Kcal</label>
+                            <input type="number" id="mealKcal" placeholder="0" min="0" required class="input-field">
                         </div>
                         <div style="flex:1; min-width:80px;">
-                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">B(g)</label>
-                            <input type="number" id="mealP" placeholder="25" min="0" style="width:100%; border-radius:0.5rem; padding:0.75rem 0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.8rem;">
+                            <label class="input-label">B (g)</label>
+                            <input type="number" id="mealP" placeholder="0" min="0" class="input-field">
                         </div>
                         <div style="flex:1; min-width:80px;">
-                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">W(g)</label>
-                            <input type="number" id="mealC" placeholder="50" min="0" style="width:100%; border-radius:0.5rem; padding:0.75rem 0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.8rem;">
+                            <label class="input-label">W (g)</label>
+                            <input type="number" id="mealC" placeholder="0" min="0" class="input-field">
                         </div>
                         <div style="flex:1; min-width:80px;">
-                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">T(g)</label>
-                            <input type="number" id="mealF" placeholder="15" min="0" style="width:100%; border-radius:0.5rem; padding:0.75rem 0.5rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.8rem;">
+                            <label class="input-label">T (g)</label>
+                            <input type="number" id="mealF" placeholder="0" min="0" class="input-field">
                         </div>
                     </div>
-                    <button type="submit" class="btn-primary" style="background:linear-gradient(to right, #10b981, #059669);">Dodaj Posiłek</button>
+                    <button type="submit" class="btn-primary" style="background:var(--primary);">Dodaj Posiłek</button>
                 </form>
                 
-                <form id="workoutForm" style="background: rgba(14, 165, 233, 0.1); padding: 1rem; border-radius: 0.5rem; border: 1px solid rgba(14, 165, 233, 0.3); margin-bottom: 1.5rem;">
-                    <h3 style="font-size: 0.95rem; margin-top: 0; margin-bottom: 0.75rem; color:#38bdf8;">🏃 Dodaj Spalanie Kalorii (Trening)</h3>
-                    <div style="display:flex; gap:0.5rem; margin-bottom: 0;">
-                        <input type="number" id="workKcal" placeholder="Spalone Kcal" min="1" required style="flex:1; border-radius:0.5rem; padding:0.75rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-size:0.8rem;">
-                        <button type="submit" class="btn-primary" style="flex:1; background:linear-gradient(to right, #0ea5e9, #0284c7); padding:0.75rem; margin:0; font-size:0.8rem;">Zapisz</button>
+                <form id="workoutForm" class="card-sub" style="background: rgba(14, 165, 233, 0.05); border-color: rgba(14, 165, 233, 0.2);">
+                    <h3 style="font-size: 1rem; margin-top: 0; margin-bottom: 1rem; color:var(--primary);">🏃 Aktywność Spalająca</h3>
+                    <div style="display:flex; gap:0.75rem;">
+                        <input type="number" id="workKcal" placeholder="Spalone kalorie" min="1" required class="input-field" style="flex:2;">
+                        <button type="submit" class="btn-primary" style="flex:1; margin:0; padding:0.75rem;">Zapisz</button>
                     </div>
                 </form>
                 
-                <div id="mealSummary" style="margin-top:1.5rem; padding:0.75rem; border-radius:0.5rem; background:rgba(0,0,0,0.3); text-align:center; border:1px solid rgba(16, 185, 129, 0.2); font-size:1.1rem;">
-                     <strong style="color:var(--text-color);">Zjedzono bilansowo: </strong> 
-                     <span id="totalKcal" style="color:#10b981; font-weight:bold;">0</span> kcal
+                <div id="mealSummary" class="card-sub" style="text-align:center; font-size:1.1rem; border-color: var(--primary);">
+                     <strong style="color:var(--text-color);">Zjedzono dzisiaj: </strong> 
+                     <span id="totalKcal" style="color:var(--primary); font-weight:bold;">0</span> kcal
                 </div>
 
                 <div class="list-container" id="mealList"></div>
@@ -514,18 +488,82 @@ function renderTabContent() {
         document.getElementById('workoutForm').addEventListener('submit', handleAddWorkout);
         renderMealsList();
     }
+    else if (state.activeTab === 'supplements') {
+        const supplements = [
+            {
+                name: 'Kreatyna (Monohydrat)',
+                icon: '⚡',
+                desc: 'Najlepiej przebadany suplement na świecie. Zwiększa siłę, wytrzymałość i nawodnienie komórek mięśniowych. Idealna dla każdego stopnia zaawansowania.',
+                dosage: '5g dziennie, o dowolnej porze.'
+            },
+            {
+                name: 'Odżywka Białkowa (WPC/WPI)',
+                icon: '🥛',
+                desc: 'Szybkie i wygodne źródło pełnowartościowego białka. Pomaga w regeneracji i budowie masy mięśniowej, gdy nie dostarczasz go dość z diety.',
+                dosage: 'Według braków w diecie (zazwyczaj 30g po treningu).'
+            },
+            {
+                name: 'Kwasy Omega-3',
+                icon: '🐟',
+                desc: 'Wspierają pracę serca, mózgu oraz hamują stany zapalne w organizmie. Kluczowe dla ogólnego zdrowia i regeneracji stawów.',
+                dosage: '1-2 kapsułki dziennie do posiłku.'
+            },
+            {
+                name: 'Kompleks Witamin i Minerałów',
+                icon: '🍎',
+                desc: 'Uzupełnia niedobory wynikające z intensywnego wysiłku. Wspiera odporność i prawidłowe funkcjonowanie metabolizmu.',
+                dosage: '1 porcja rano do śniadania.'
+            },
+            {
+                name: 'Magnez + B6',
+                icon: '🔋',
+                desc: 'Zapobiega skurczom mięśni, poprawia jakość snu i wspiera układ nerwowy po ciężkich sesjach treningowych.',
+                dosage: 'Najlepiej wieczorem przed snem.'
+            },
+            {
+                name: 'Kofeina / Przedtreningówka',
+                icon: '☕',
+                desc: 'Zwiększa skupienie, pobudza i pozwala na wykonanie cięższego treningu. Stosować z umiarem, by nie obciążać układu nerwowego.',
+                dosage: '200-300mg na ok. 30-45 min przed treningiem.'
+            }
+        ];
+
+        contentDiv.innerHTML = `
+            <div class="supplements-section" style="animation: fadeIn 0.3s ease-out;">
+                <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1.5rem;">Podstawowa Suplementacja</h2>
+                <p style="text-align:center; color:var(--text-muted); font-size:0.9rem; margin-bottom:2rem; max-width:600px; margin-left:auto; margin-right:auto;">
+                    Pamiętaj, że suplementy to tylko dodatek do zbilansowanej diety i treningu. Poniżej znajdziesz fundamenty, które realnie wspierają formę.
+                </p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 1.5rem;">
+                    ${supplements.map(s => `
+                        <div class="card-sub" style="margin-bottom:0; display:flex; flex-direction:column; gap:0.75rem; transition: transform 0.2s ease;">
+                            <div style="display:flex; align-items:center; gap:0.75rem;">
+                                <span style="font-size:2rem;">${s.icon}</span>
+                                <h3 style="font-size:1.1rem; margin:0; color:var(--text-color);">${s.name}</h3>
+                            </div>
+                            <p style="font-size:0.85rem; color:var(--text-muted); line-height:1.5; margin:0; flex:1;">${s.desc}</p>
+                            <div style="background:var(--input-bg); padding:0.6rem 0.8rem; border-radius:0.5rem; border:1px solid var(--glass-border);">
+                                <span style="font-size:0.75rem; font-weight:700; color:var(--primary); display:block; margin-bottom:0.2rem; text-transform:uppercase;">Dawkowanie:</span>
+                                <span style="font-size:0.85rem; color:var(--text-color);">${s.dosage}</span>
+                            </div>
+                        </div>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }
     else if (state.activeTab === 'notes') {
         contentDiv.innerHTML = `
             <div class="notes-logger" style="animation: fadeIn 0.3s ease-out;">
-                <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1rem;">Złote myśli i plany</h2>
-                <form id="noteForm">
+                <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1.5rem;">Złote myśli i plany</h2>
+                <form id="noteForm" class="card-sub">
                     <div class="input-group">
-                        <textarea id="valNotes" placeholder="Nowa notatka, np. plan na klatkę piersiową..." required style="width:100%; height:80px; resize:vertical; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit;"></textarea>
+                        <textarea id="valNotes" placeholder="Nowa notatka, np. plan na klatkę piersiową..." required class="input-field" style="height:120px; resize:vertical;"></textarea>
                     </div>
-                    <button type="submit" class="btn-primary" style="background:linear-gradient(to right, #ec4899, #db2777);">Dodaj Notatkę</button>
+                    <button type="submit" class="btn-primary">Dodaj Notatkę</button>
                 </form>
                 
-                <div class="notes-grid" id="notesList" style="margin-top: 1.5rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 0.75rem;">
+                <div class="notes-grid" id="notesList" style="margin-top: 1.5rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem;">
                     <!-- Notatki -->
                 </div>
             </div>
@@ -537,27 +575,27 @@ function renderTabContent() {
         const today = new Date().toISOString().split('T')[0];
         contentDiv.innerHTML = `
             <div class="progress-logger" style="animation: fadeIn 0.3s ease-out;">
-                <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1rem;">Śledzenie Postępów</h2>
-                <form id="progressForm">
-                    <div style="display:flex; gap:0.5rem; margin-bottom: 0.75rem;">
-                        <div style="flex:1;">
-                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Data wpisu</label>
-                            <input type="date" id="progDate" value="${today}" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit;">
+                <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1.5rem;">Śledzenie Postępów</h2>
+                <form id="progressForm" class="card-sub">
+                    <div style="display:flex; gap:1rem; margin-bottom: 1.25rem; flex-wrap:wrap;">
+                        <div style="flex:1; min-width:140px;">
+                            <label class="input-label">Data wpisu</label>
+                            <input type="date" id="progDate" value="${today}" required class="input-field">
                         </div>
-                        <div style="flex:1;">
-                            <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Waga (kg)</label>
-                            <input type="number" id="progWeight" placeholder="np. 70" step="0.1" required style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit;">
+                        <div style="flex:1; min-width:140px;">
+                            <label class="input-label">Waga (kg)</label>
+                            <input type="number" id="progWeight" placeholder="np. 70" step="0.1" required class="input-field">
                         </div>
                     </div>
-                    <div class="input-group" style="margin-bottom:1rem;">
-                        <label for="progPhoto">Dodaj zdjęcie sylwetki <span style="font-size:0.7rem;color:var(--text-muted);">(opcjonalne)</span></label>
-                        <input type="file" id="progPhoto" accept="image/*" style="width:100%; border-radius:0.5rem; padding:0.75rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit; font-size: 0.8rem;">
+                    <div class="input-group" style="margin-bottom:1.5rem;">
+                        <label class="input-label">Dodaj zdjęcie sylwetki</label>
+                        <input type="file" id="progPhoto" accept="image/*" class="input-field" style="padding: 0.5rem;">
                     </div>
-                    <button type="submit" class="btn-primary" style="background:linear-gradient(to right, #f59e0b, #ea580c);">Zapisz Pomiar</button>
-                    <div id="progStatus" style="text-align:center; margin-top:0.5rem; font-size:0.75rem; color:var(--text-muted);"></div>
+                    <button type="submit" class="btn-primary">Zapisz Pomiar</button>
+                    <div id="progStatus" style="text-align:center; margin-top:0.75rem; font-size:0.85rem; color:var(--primary); font-weight:500;"></div>
                 </form>
 
-                <div class="progress-grid" id="progressList" style="margin-top: 1.5rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(130px, 1fr)); gap: 1rem;">
+                <div class="progress-grid" id="progressList" style="margin-top: 2rem; display: grid; grid-template-columns: repeat(auto-fill, minmax(180px, 1fr)); gap: 1.5rem;">
                     <!-- Postępy -->
                 </div>
             </div>
@@ -803,13 +841,24 @@ function renderMealsList() {
                 </div>
             `;
             
-            summaryDiv.innerHTML = `<strong style="color:var(--text-color);">Zjedzono bilansowo: </strong><span id="totalKcal" style="color:#10b981; font-weight:bold;">${netKcal}</span> kcal / <span style="font-size:0.8rem; color:var(--text-muted);">${targetKcal} kcal cel</span><br><div style="margin-top:0.4rem; font-size:0.85rem;">${leftMsg} ${burnedKcal > 0 ? `(Odzyskano 🏃+${burnedKcal} kcal)` : ''}</div> ${macroHtml}`;
+            summaryDiv.innerHTML = `
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div style="text-align:left;">
+                        <strong style="color:var(--text-color);">Bilans: </strong><span id="totalKcal" style="color:var(--primary); font-weight:bold; font-size:1.25rem;">${netKcal}</span> <span style="font-size:0.85rem; color:var(--text-muted);">/ ${targetKcal} kcal</span>
+                    </div>
+                </div>
+                <div style="margin-top:0.4rem; font-size:0.85rem; text-align:left;">${leftMsg} ${burnedKcal > 0 ? `<span style="color:var(--primary); font-weight:500;">(Spalono 🏃 ${burnedKcal} kcal)</span>` : ''}</div> 
+                ${macroHtml}
+            `;
             
             // Render Chart
             setTimeout(() => {
                 const ctx = document.getElementById('macroChart')?.getContext('2d');
                 if (ctx) {
                     if(window.macroChartInstance) window.macroChartInstance.destroy();
+                    const isDark = activeTheme === 'dark';
+                    const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim();
+                    
                     window.macroChartInstance = new Chart(ctx, {
                         type: 'doughnut',
                         data: {
@@ -821,14 +870,14 @@ function renderMealsList() {
                                     Math.min(totalF, targetF), 
                                     Math.max(0, targetP - totalP + targetC - totalC + targetF - totalF)
                                 ],
-                                backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', 'rgba(255,255,255,0.05)'],
+                                backgroundColor: ['#3b82f6', '#10b981', '#f59e0b', isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)'],
                                 borderWidth: 0
                             }]
                         },
                         options: {
                             responsive: true,
                             maintainAspectRatio: false,
-                            cutout: '70%',
+                            cutout: '75%',
                             plugins: { legend: { display: false } }
                         }
                     });
@@ -836,7 +885,7 @@ function renderMealsList() {
             }, 50);
 
         } else {
-            summaryDiv.innerHTML = `<strong style="color:var(--text-color);">Zjedzono bilansowo: </strong><span id="totalKcal" style="color:#10b981; font-weight:bold;">${netKcal}</span> kcal<div style="font-size:0.7rem; color:var(--text-muted); margin-top:0.3rem;">Oblicz swój Cel w Kalkulatorze BMI, aby zyskać licznik bilansu widoczny na żywo oraz estymację Makroskładników.</div>`;
+            summaryDiv.innerHTML = `<strong style="color:var(--text-color);">Zjedzono bilansowo: </strong><span id="totalKcal" style="color:var(--primary); font-weight:bold;">${netKcal}</span> kcal<div style="font-size:0.75rem; color:var(--text-muted); margin-top:0.4rem; line-height:1.4;">Oblicz swój Cel w Kalkulatorze BMI, aby odblokować licznik bilansu i estymację Makroskładników.</div>`;
         }
     }
     
@@ -846,9 +895,10 @@ function renderMealsList() {
     const waterElement = document.getElementById('waterCount');
     if (waterElement) {
         if (currentWater >= 3000) {
-            waterElement.innerHTML = `${currentWater} / 3000 ml<br><span style="color:#10b981; font-size:0.75rem; display:block; margin-top:0.4rem; padding: 0.25rem; background:rgba(16, 185, 129, 0.1); border-radius:0.25rem; border:1px solid rgba(16, 185, 129, 0.2); font-weight:normal; animation: fadeIn 0.4s ease-out;">Cel osiągnięty! Świetna robota! 🏆</span>`;
+            waterElement.innerHTML = `${currentWater} / 3000 ml<br><span style="color:#10b981; font-size:0.75rem; display:block; margin-top:0.5rem; padding: 0.4rem; background:rgba(16, 185, 129, 0.1); border-radius:0.5rem; border:1px solid rgba(16, 185, 129, 0.2); font-weight:500; animation: fadeIn 0.4s ease-out;">Cel osiągnięty! 🏆</span>`;
         } else {
             waterElement.textContent = `${currentWater} / 3000 ml`;
+            waterElement.style.color = 'var(--text-color)';
         }
     }
 
@@ -943,10 +993,10 @@ function renderNotesList() {
     let html = '';
     notes.forEach(n => {
         html += `
-            <div class="note-card" style="background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1); border-radius: 0.5rem; padding: 0.75rem; position: relative; display: flex; flex-direction: column;">
-                <button onclick="deleteNote('${n.id}')" style="position: absolute; top: 0.5rem; right: 0.5rem; background: transparent; border: none; color: var(--danger); font-size: 1rem; cursor: pointer; opacity: 0.7; padding: 0;">✕</button>
-                <div style="font-size: 0.65rem; color: var(--text-muted); margin-bottom: 0.5rem;">${n.date}</div>
-                <div style="font-size: 0.85rem; white-space: pre-wrap; word-wrap: break-word; flex:1; color: var(--text-color);">${n.content}</div>
+            <div class="note-card" style="background: var(--panel-bg); border: 1px solid var(--glass-border); border-radius: 0.5rem; padding: 1rem; position: relative; display: flex; flex-direction: column; box-shadow: var(--card-shadow);">
+                <button onclick="deleteNote('${n.id}')" style="position: absolute; top: 0.5rem; right: 0.5rem; background: transparent; border: none; color: var(--danger); font-size: 1.1rem; cursor: pointer; opacity: 0.6; padding: 0;">✕</button>
+                <div style="font-size: 0.7rem; color: var(--text-muted); margin-bottom: 0.5rem; font-weight:500;">${n.date}</div>
+                <div style="font-size: 0.9rem; white-space: pre-wrap; word-wrap: break-word; flex:1; color: var(--text-color); line-height:1.4;">${n.content}</div>
             </div>
         `;
     });
@@ -1027,14 +1077,14 @@ function renderProgressList() {
     progressData.forEach(p => {
         let photoHtml = '';
         if (p.photo) {
-            photoHtml = `<img src="${p.photo}" style="width:100%; height:120px; object-fit:cover; border-radius:0.5rem; margin-bottom:0.5rem; border:1px solid rgba(255,255,255,0.1);">`;
+            photoHtml = `<img src="${p.photo}" style="width:100%; height:120px; object-fit:cover; border-radius:0.5rem; margin-bottom:0.5rem; border:1px solid var(--glass-border);">`;
         } else {
-            photoHtml = `<div style="width:100%; height:120px; background:rgba(0,0,0,0.2); border-radius:0.5rem; display:flex; align-items:center; justify-content:center; color:var(--text-muted); margin-bottom:0.5rem; font-size: 0.75rem;">Brak zdjęcia</div>`;
+            photoHtml = `<div style="width:100%; height:120px; background:var(--glass-bg); border-radius:0.5rem; display:flex; align-items:center; justify-content:center; color:var(--text-muted); margin-bottom:0.5rem; font-size: 0.75rem; border: 1px dashed var(--glass-border);">Brak zdjęcia</div>`;
         }
         
         html += `
-            <div class="progress-card" style="background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 0.5rem; padding: 0.75rem; position: relative;">
-                <button onclick="deleteProgress('${p.id}')" style="position: absolute; top: 0.5rem; right: 0.5rem; background: rgba(0,0,0,0.7); border: none; color: white; width:22px; height:22px; border-radius: 50%; font-size: 0.75rem; cursor: pointer; display:flex; align-items:center; justify-content:center;">✕</button>
+            <div class="progress-card" style="background: var(--panel-bg); border: 1px solid var(--glass-border); border-radius: 0.5rem; padding: 0.75rem; position: relative; box-shadow: var(--card-shadow);">
+                <button onclick="deleteProgress('${p.id}')" style="position: absolute; top: 0.5rem; right: 0.5rem; background: var(--danger); border: none; color: white; width:22px; height:22px; border-radius: 50%; font-size: 0.75rem; cursor: pointer; display:flex; align-items:center; justify-content:center; opacity: 0.8;">✕</button>
                 ${photoHtml}
                 <div style="font-size: 0.75rem; color: var(--text-muted); margin-bottom: 0.25rem;">${p.date}</div>
                 <div style="font-size: 1.1rem; font-weight:bold; color: var(--text-color);">${p.weight} kg</div>
@@ -1057,6 +1107,10 @@ function renderProgressList() {
         if (ctx && progressData.length > 0) {
             if (window.weightChartInstance) window.weightChartInstance.destroy();
             
+            const isDark = activeTheme === 'dark';
+            const gridColor = isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.1)';
+            const textColor = getComputedStyle(document.documentElement).getPropertyValue('--text-muted').trim();
+
             const sortedData = [...progressData].sort((a,b) => new Date(a.date) - new Date(b.date));
             const labels = sortedData.map(d => d.date);
             const dataPts = sortedData.map(d => d.weight);
@@ -1068,20 +1122,30 @@ function renderProgressList() {
                     datasets: [{
                         label: 'Waga (kg)',
                         data: dataPts,
-                        borderColor: '#f59e0b',
-                        backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
                         borderWidth: 3,
-                        pointBackgroundColor: '#ea580c',
+                        pointBackgroundColor: '#2563eb',
                         fill: true,
-                        tension: 0.3
+                        tension: 0.4
                     }]
                 },
                 options: {
                     maintainAspectRatio: false,
-                    plugins: { legend: { labels: { color: 'white' } } },
+                    plugins: { 
+                        legend: { 
+                            labels: { color: textColor, font: { size: 11 } } 
+                        } 
+                    },
                     scales: {
-                        x: { ticks: { color: 'rgba(255,255,255,0.7)' }, grid: { color: 'rgba(255,255,255,0.1)' } },
-                        y: { ticks: { color: 'rgba(255,255,255,0.7)' }, grid: { color: 'rgba(255,255,255,0.1)' } }
+                        x: { 
+                            ticks: { color: textColor, font: { size: 10 } }, 
+                            grid: { color: gridColor } 
+                        },
+                        y: { 
+                            ticks: { color: textColor, font: { size: 10 } }, 
+                            grid: { color: gridColor } 
+                        }
                     }
                 }
             });
@@ -1099,13 +1163,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Inject floating timer dynamically
     const timerDiv = document.createElement('div');
     timerDiv.id = 'floatingTimer';
-    timerDiv.style.cssText = 'display:none; position:fixed; bottom:20px; right:20px; background:rgba(0,0,0,0.7); backdrop-filter:blur(8px); border:1px solid rgba(255,255,255,0.1); border-radius:1rem; padding:0.5rem 0.75rem; flex-direction:column; align-items:center; z-index:1000; box-shadow:0 10px 25px rgba(0,0,0,0.5); transition:all 0.3s ease;';
+    timerDiv.style.cssText = 'display:none; position:fixed; bottom:24px; right:24px; background:var(--glass-bg); backdrop-filter:blur(12px); border:1px solid var(--glass-border); border-radius:1rem; padding:0.75rem 1rem; flex-direction:column; align-items:center; z-index:1000; box-shadow:var(--card-shadow); transition:all 0.3s ease;';
     timerDiv.innerHTML = `
-        <div style="font-size: 0.65rem; color: #9ca3af; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.2rem;">⏱️ Przerwa</div>
-        <div style="display:flex; gap:0.5rem; align-items:center; margin-bottom:0.25rem;">
-            <button onclick="addTime(-15)" style="background:transparent; color:#9ca3af; border:none; cursor:pointer; font-size:1.2rem; min-width:30px;">-</button>
-            <span id="timerDisplay" style="font-size:1.6rem; font-weight:bold; font-family:monospace; color:#38bdf8; width:70px; text-align:center; transition: color 0.3s;">01:30</span>
-            <button onclick="addTime(15)" style="background:transparent; color:#9ca3af; border:none; cursor:pointer; font-size:1.2rem; min-width:30px;">+</button>
+        <div style="font-size: 0.65rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 0.3rem; font-weight:600;">⏱️ Przerwa</div>
+        <div style="display:flex; gap:0.75rem; align-items:center; margin-bottom:0.5rem;">
+            <button onclick="addTime(-15)" style="background:transparent; color:var(--text-muted); border:none; cursor:pointer; font-size:1.25rem; min-width:30px; transition:color 0.2s;">-</button>
+            <span id="timerDisplay" style="font-size:1.75rem; font-weight:700; font-family:monospace; color:var(--primary); width:80px; text-align:center; transition: color 0.3s;">01:30</span>
+            <button onclick="addTime(15)" style="background:transparent; color:var(--text-muted); border:none; cursor:pointer; font-size:1.25rem; min-width:30px; transition:color 0.2s;">+</button>
         </div>
         <div style="display:flex; gap:0.5rem; width: 100%;">
             <button onclick="toggleTimer()" id="timerToggleBtn" style="flex:2; background:var(--primary); color:white; border:none; border-radius:0.5rem; padding:0.3rem; cursor:pointer; font-size:0.8rem; font-weight:bold;">Start</button>
