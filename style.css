@@ -60,9 +60,20 @@ body {
     align-items: start;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 850px) {
     .dashboard-layout {
         grid-template-columns: 1fr;
+    }
+    
+    .tabs {
+        flex-direction: row;
+        overflow-x: auto;
+        padding: 0.5rem;
+    }
+    
+    .tab-btn {
+        white-space: nowrap;
+        padding: 0.75rem 1rem;
     }
 }
 

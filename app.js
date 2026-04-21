@@ -204,17 +204,21 @@ function renderDashboard() {
     if(document.getElementById('timerDisplay').textContent === "01:30") updateTimerDisplay(); // init just once safely
     
     app.innerHTML = `
-        <div class="glass-panel" style="animation: fadeIn 0.4s ease-out; position: relative;">
-            <div style="position:absolute; top:1.25rem; right:1.25rem; display:flex; gap:0.5rem; align-items:center;">
-                <button onclick="toggleTheme()" title="Zmień motyw" style="background:transparent; border:1px solid var(--glass-border); color:var(--text-color); padding:0.4rem; border-radius:0.5rem; cursor:pointer; font-size:1rem;">${activeTheme === 'dark' ? '🌞' : '🌙'}</button>
-                <button onclick="triggerImport()" title="Wgraj kopię zapasową" style="background:transparent; border:1px solid var(--glass-border); color:var(--text-color); padding:0.4rem; border-radius:0.5rem; cursor:pointer; font-size:0.75rem;">📁 Wczytaj</button>
-                <button onclick="exportData()" title="Zapisz dane do pliku" style="background:transparent; border:1px solid rgba(16, 185, 129, 0.5); color:#10b981; padding:0.4rem; border-radius:0.5rem; cursor:pointer; font-size:0.75rem;">💾 Zapisz</button>
-                <button onclick="logout()" style="background:transparent; border:1px solid rgba(239, 68, 68, 0.5); color:var(--danger); padding:0.4rem 0.8rem; border-radius:0.5rem; cursor:pointer; font-size:0.75rem;">Wyloguj</button>
-            </div>
-            <input type="file" id="importFile" accept=".json" style="display:none;" onchange="handleImport(event)">
+        <div class="glass-panel" style="animation: fadeIn 0.4s ease-out;">
+            <header style="display:flex; justify-content:space-between; align-items:flex-start; flex-wrap:wrap; gap:1rem; margin-bottom:2.5rem; padding: 0 1rem;">
+                <div style="flex: 1; min-width: 250px;">
+                    <h1 style="margin: 0; font-size:2.2rem; font-weight:800; letter-spacing:-0.5px;">Cześć, ${state.username}!</h1>
+                    <p class="subtitle" style="margin: 0.4rem 0 0 0; font-size: 1.1rem; opacity: 0.8;">Twój zaawansowany panel fitness</p>
+                </div>
+                <div style="display:flex; gap:0.5rem; align-items:center; background: var(--panel-bg); padding: 0.5rem; border-radius: 0.75rem; border: 1px solid var(--glass-border);">
+                    <button onclick="toggleTheme()" title="Zmień motyw" style="background:transparent; border:1px solid var(--glass-border); color:var(--text-color); padding:0.4rem; border-radius:0.5rem; cursor:pointer; font-size:1.1rem; transition: all 0.2s;">${activeTheme === 'dark' ? '🌞' : '🌙'}</button>
+                    <button onclick="triggerImport()" title="Wgraj kopię zapasową" style="background:transparent; border:1px solid var(--glass-border); color:var(--text-color); padding:0.4rem 0.8rem; border-radius:0.5rem; cursor:pointer; font-size:0.75rem; font-weight:600;">📁 Wczytaj</button>
+                    <button onclick="exportData()" title="Zapisz dane do pliku" style="background:transparent; border:1px solid rgba(16, 185, 129, 0.4); color:#10b981; padding:0.4rem 0.8rem; border-radius:0.5rem; cursor:pointer; font-size:0.75rem; font-weight:600;">💾 Kopia</button>
+                    <button onclick="logout()" style="background:var(--danger); border:none; color:white; padding:0.4rem 0.8rem; border-radius:0.5rem; cursor:pointer; font-size:0.75rem; font-weight:700;">Wyloguj</button>
+                </div>
+            </header>
             
-            <h1 style="text-align: left; margin-top: 0; font-size:2rem; padding-left:1rem;">Cześć, ${state.username}!</h1>
-            <p class="subtitle" style="text-align: left; margin-bottom: 2.5rem; padding-left:1rem; font-size: 1rem;">Twój zaawansowany panel fitness</p>
+            <input type="file" id="importFile" accept=".json" style="display:none;" onchange="handleImport(event)">
             
             <div class="dashboard-layout">
                 <div class="tabs">
