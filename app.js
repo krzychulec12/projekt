@@ -130,10 +130,16 @@ window.logout = function() {
 window.switchTab = function(tabName) {
     state.activeTab = tabName;
     
-    // Update button active states
+    // Update button active states using data-tab or content check
     const buttons = document.querySelectorAll('.tab-btn');
     buttons.forEach(btn => {
-        if (btn.getAttribute('onclick').includes(`'${tabName}'`)) {
+        if (btn.textContent.includes(tabName === 'bmi' ? 'BMI' : 
+                                     tabName === 'exercises' ? 'Ćwiczenia' : 
+                                     tabName === 'meals' ? 'Posiłki' : 
+                                     tabName === 'supplements' ? 'Suplementacja' :
+                                     tabName === 'sleep' ? 'Sen' :
+                                     tabName === 'history' ? 'Historia' :
+                                     tabName === 'notes' ? 'Notatki' : 'Progres')) {
             btn.classList.add('active');
         } else {
             btn.classList.remove('active');
@@ -246,10 +252,14 @@ function renderDashboard() {
 }
 
 function renderTabContent() {
-    const contentDiv = document.getElementById('tabContent');
-    if (!contentDiv) return;
-    
-    if (!state.activeTab) state.activeTab = 'bmi';
+    try {
+        const contentDiv = document.getElementById('tabContent');
+        if (!contentDiv) return;
+        
+        if (!state.activeTab) state.activeTab = 'bmi';
+
+        // Scroll to top of content
+        contentDiv.scrollTop = 0;
 
     if (state.activeTab === 'bmi') {
         contentDiv.innerHTML = `
@@ -660,6 +670,10 @@ function renderTabContent() {
         `;
         document.getElementById('progressForm').addEventListener('submit', handleAddProgress);
         renderProgressList();
+    }
+    } catch (error) {
+        console.error("Tab Rendering Error:", error);
+        document.getElementById('tabContent').innerHTML = `<div class="card-sub" style="color:var(--danger);">Wystąpił błąd podczas ładowania tej zakładki. Odśwież stronę lub sprawdź konsolę.</div>`;
     }
 }
 
