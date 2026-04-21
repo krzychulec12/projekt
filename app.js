@@ -11,6 +11,7 @@ let meals = [];
 let notes = [];
 let progressData = [];
 let waterData = {};
+let sleepData = {};
 let targetKcal = 0;
 let workouts = [];
 
@@ -31,6 +32,7 @@ function loadData() {
         workouts = JSON.parse(localStorage.getItem(`fitness_workouts_${state.username}`)) || [];
         progressData = JSON.parse(localStorage.getItem(`fitness_progress_${state.username}`)) || [];
         waterData = JSON.parse(localStorage.getItem(`fitness_water_${state.username}`)) || {};
+        sleepData = JSON.parse(localStorage.getItem(`fitness_sleep_${state.username}`)) || {};
         targetKcal = parseInt(localStorage.getItem(`fitness_targetKcal_${state.username}`)) || 0;
         
         const loadedNotes = localStorage.getItem(`fitness_notes_${state.username}`);
@@ -54,6 +56,7 @@ function saveData() {
         localStorage.setItem(`fitness_workouts_${state.username}`, JSON.stringify(workouts));
         localStorage.setItem(`fitness_notes_${state.username}`, JSON.stringify(notes));
         localStorage.setItem(`fitness_water_${state.username}`, JSON.stringify(waterData));
+        localStorage.setItem(`fitness_sleep_${state.username}`, JSON.stringify(sleepData));
         localStorage.setItem(`fitness_targetKcal_${state.username}`, targetKcal);
         try {
             localStorage.setItem(`fitness_progress_${state.username}`, JSON.stringify(progressData));
@@ -148,6 +151,7 @@ function exportData() {
         notes,
         progressData,
         waterData,
+        sleepData,
         targetKcal
     };
     const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(dataObj));
@@ -167,14 +171,15 @@ function handleImport(event) {
     const reader = new FileReader();
     reader.onload = function(e) {
         try {
-            const imported = JSON.parse(e.target.result);
-            exercises = imported.exercises || [];
-            meals = imported.meals || [];
-            workouts = imported.workouts || [];
-            notes = imported.notes || [];
-            progressData = imported.progressData || [];
-            waterData = imported.waterData || {};
-            targetKcal = parseInt(imported.targetKcal) || 0;
+            const data = JSON.parse(e.target.result);
+            if (data.exercises) exercises = data.exercises;
+            if (data.meals) meals = data.meals;
+            if (data.workouts) workouts = data.workouts;
+            if (data.notes) notes = data.notes;
+            if (data.progressData) progressData = data.progressData;
+            if (data.waterData) waterData = data.waterData;
+            if (data.sleepData) sleepData = data.sleepData;
+            if (data.targetKcal) targetKcal = data.targetKcal;
             saveData();
             alert("Kopia zapasowa załadowana pomyślnie!");
             renderDashboard();
@@ -226,6 +231,8 @@ function renderDashboard() {
                     <button class="tab-btn ${state.activeTab === 'exercises' ? 'active' : ''}" onclick="switchTab('exercises')">🏋️ Ćwiczenia</button>
                     <button class="tab-btn ${state.activeTab === 'meals' ? 'active' : ''}" onclick="switchTab('meals')">🍽️ Posiłki & Cardio</button>
                     <button class="tab-btn ${state.activeTab === 'supplements' ? 'active' : ''}" onclick="switchTab('supplements')">💊 Suplementacja</button>
+                    <button class="tab-btn ${state.activeTab === 'sleep' ? 'active' : ''}" onclick="switchTab('sleep')">🌙 Sen</button>
+                    <button class="tab-btn ${state.activeTab === 'history' ? 'active' : ''}" onclick="switchTab('history')">📜 Historia Dni</button>
                     <button class="tab-btn ${state.activeTab === 'notes' ? 'active' : ''}" onclick="switchTab('notes')">📝 Notatki</button>
                     <button class="tab-btn ${state.activeTab === 'progress' ? 'active' : ''}" onclick="switchTab('progress')">📈 Progres</button>
                 </div>
@@ -569,6 +576,39 @@ function renderTabContent() {
                 </div>
             </div>
         `;
+    }
+    else if (state.activeTab === 'sleep') {
+        const today = new Date().toISOString().split('T')[0];
+        const currentSleep = sleepData[today] || 0;
+        contentDiv.innerHTML = `
+            <div class="sleep-logger" style="animation: fadeIn 0.3s ease-out;">
+                <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1.5rem;">Monitor Snu 🌙</h2>
+                <div class="card-sub" style="text-align:center;">
+                    <h3 style="font-size: 1rem; color:var(--primary); margin-top:0;">Dzisiejszy sen</h3>
+                    <div style="font-size:3rem; font-weight:800; margin:1rem 0;">${currentSleep} <span style="font-size:1.25rem; color:var(--text-muted);">h</span></div>
+                    <p style="font-size:0.85rem; color:var(--text-muted); margin-bottom:1.5rem;">Zalecana ilość snu to 7-9 godzin dla pełnej regeneracji.</p>
+                    
+                    <div style="display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap;">
+                        <input type="number" id="sleepInput" placeholder="Godziny" min="0" max="24" step="0.5" class="input-field" style="width:120px;">
+                        <button onclick="saveSleep()" class="btn-primary" style="margin:0;">Zapisz</button>
+                    </div>
+                </div>
+
+                <div id="sleepHistory" style="margin-top:2rem;"></div>
+            </div>
+        `;
+        renderSleepList();
+    }
+    else if (state.activeTab === 'history') {
+        contentDiv.innerHTML = `
+            <div class="history-section" style="animation: fadeIn 0.3s ease-out;">
+                <h2 style="font-size: 1.25rem; text-align:center; margin-top:0; margin-bottom:1.5rem;">Twoja Historia Dni 📜</h2>
+                <div id="historyList" style="display:flex; flex-direction:column; gap:1rem;">
+                    <!-- Agregowane dane dni -->
+                </div>
+            </div>
+        `;
+        renderHistory();
     }
     else if (state.activeTab === 'notes') {
         contentDiv.innerHTML = `
@@ -1262,6 +1302,94 @@ window.toggleTimer = function() {
             }
         }, 1000);
     }
+}
+
+window.saveSleep = function() {
+    const input = document.getElementById('sleepInput');
+    const hours = parseFloat(input.value) || 0;
+    const today = new Date().toISOString().split('T')[0];
+    
+    sleepData[today] = hours;
+    saveData();
+    renderTabContent();
+}
+
+function renderSleepList() {
+    const listDiv = document.getElementById('sleepHistory');
+    if (!listDiv) return;
+    
+    const dates = Object.keys(sleepData).sort((a,b) => new Date(b) - new Date(a));
+    if (dates.length === 0) return;
+    
+    let html = '<h3 style="font-size:1rem; margin-bottom:1rem;">Ostatnie dni</h3>';
+    dates.slice(0, 7).forEach(d => {
+        html += `
+            <div class="list-item" style="margin-bottom:0.5rem; padding:0.6rem 1rem;">
+                <span style="font-size:0.85rem; color:var(--text-muted);">${d}</span>
+                <strong style="color:var(--primary);">${sleepData[d]} h</strong>
+            </div>
+        `;
+    });
+    listDiv.innerHTML = html;
+}
+
+function renderHistory() {
+    const listDiv = document.getElementById('historyList');
+    if (!listDiv) return;
+
+    // Collect all unique dates
+    const allDates = new Set();
+    meals.forEach(m => m.date && allDates.add(m.date));
+    workouts.forEach(w => w.date && allDates.add(w.date));
+    Object.keys(waterData).forEach(d => allDates.add(d));
+    Object.keys(sleepData).forEach(d => allDates.add(d));
+
+    const sortedDates = Array.from(allDates).sort((a, b) => new Date(b) - new Date(a));
+
+    if (sortedDates.length === 0) {
+        listDiv.innerHTML = '<p style="text-align:center; color:var(--text-muted); margin-top:2rem;">Brak danych historycznych.</p>';
+        return;
+    }
+
+    let html = '';
+    sortedDates.forEach(date => {
+        // Daily stats
+        const dayMeals = meals.filter(m => m.date === date);
+        const dayWorkouts = workouts.filter(w => w.date === date);
+        const dayWater = waterData[date] || 0;
+        const daySleep = sleepData[date] || 0;
+
+        const kcalEaten = dayMeals.reduce((sum, m) => sum + (m.kcal || 0), 0);
+        const kcalBurned = dayWorkouts.reduce((sum, w) => sum + (w.kcal || 0), 0);
+        const netKcal = kcalEaten - kcalBurned;
+
+        html += `
+            <div class="card-sub" style="margin-bottom:0; display:grid; grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); gap:1rem; align-items:center;">
+                <div style="grid-column: 1 / -1; border-bottom: 1px solid var(--glass-border); padding-bottom: 0.5rem; margin-bottom: 0.5rem; display:flex; justify-content:space-between; align-items:center;">
+                    <strong style="color:var(--primary); font-size:1.1rem;">${date}</strong>
+                    <span style="font-size:0.75rem; color:var(--text-muted);">${new Date(date).toLocaleDateString('pl-PL', { weekday: 'long' })}</span>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase;">Kalorie</div>
+                    <div style="font-weight:700; color:var(--text-color);">${netKcal} kcal</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase;">Woda</div>
+                    <div style="font-weight:700; color:var(--text-color);">${dayWater} ml</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase;">Sen</div>
+                    <div style="font-weight:700; color:var(--text-color);">${daySleep} h</div>
+                </div>
+                <div style="text-align:center;">
+                    <div style="font-size:0.7rem; color:var(--text-muted); text-transform:uppercase;">Posiłki</div>
+                    <div style="font-weight:700; color:var(--text-color);">${dayMeals.length}</div>
+                </div>
+            </div>
+        `;
+    });
+
+    listDiv.innerHTML = html;
 }
 
 window.resetTimer = function() {
