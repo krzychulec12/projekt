@@ -238,15 +238,8 @@ function renderTabContent() {
     const contentDiv = document.getElementById('tabContent');
     if (!contentDiv) return;
     
-    // Stabilize scroll and opacity
-    contentDiv.style.opacity = '0';
-    
-    setTimeout(() => {
-        contentDiv.style.opacity = '1';
-    }, 50);
-
     if (!state.activeTab) state.activeTab = 'bmi';
-    
+
     if (state.activeTab === 'bmi') {
         contentDiv.innerHTML = `
             <div class="bmi-calculator" style="animation: fadeIn 0.3s ease-out;">
