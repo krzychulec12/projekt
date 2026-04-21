@@ -126,7 +126,18 @@ window.logout = function() {
 
 window.switchTab = function(tabName) {
     state.activeTab = tabName;
-    renderDashboard();
+    
+    // Update button active states
+    const buttons = document.querySelectorAll('.tab-btn');
+    buttons.forEach(btn => {
+        if (btn.getAttribute('onclick').includes(`'${tabName}'`)) {
+            btn.classList.add('active');
+        } else {
+            btn.classList.remove('active');
+        }
+    });
+    
+    renderTabContent();
 }
 
 function exportData() {
@@ -215,7 +226,7 @@ function renderDashboard() {
                     <button class="tab-btn ${state.activeTab === 'progress' ? 'active' : ''}" onclick="switchTab('progress')">📈 Progres</button>
                 </div>
                 
-                <div id="tabContent" style="min-height: 400px;"></div>
+                <div id="tabContent" class="tab-content"></div>
             </div>
         </div>
     `;
@@ -225,6 +236,16 @@ function renderDashboard() {
 
 function renderTabContent() {
     const contentDiv = document.getElementById('tabContent');
+    if (!contentDiv) return;
+    
+    // Stabilize scroll and opacity
+    contentDiv.style.opacity = '0';
+    
+    setTimeout(() => {
+        contentDiv.style.opacity = '1';
+    }, 50);
+
+    if (!state.activeTab) state.activeTab = 'bmi';
     
     if (state.activeTab === 'bmi') {
         contentDiv.innerHTML = `

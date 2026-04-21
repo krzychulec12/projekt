@@ -208,6 +208,11 @@ h1 {
     height: 100%;
 }
 
+.tab-content {
+    min-height: 600px;
+    transition: opacity 0.2s ease-in-out;
+}
+
 .tab-btn {
     width: 100%;
     text-align: left;
