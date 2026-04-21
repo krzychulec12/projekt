@@ -4,6 +4,8 @@ let state = {
     username: '',
     activeTab: 'bmi'
 };
+let activeTheme = localStorage.getItem('fitness_theme') || 'dark';
+document.documentElement.setAttribute('data-theme', activeTheme);
 let exercises = [];
 let meals = [];
 let notes = [];
@@ -177,6 +179,36 @@ window.exportData = exportData;
 window.triggerImport = triggerImport;
 window.handleImport = handleImport;
 
+window.toggleTheme = function() {
+    activeTheme = activeTheme === 'dark' ? 'light' : 'dark';
+    localStorage.setItem('fitness_theme', activeTheme);
+    document.documentElement.setAttribute('data-theme', activeTheme);
+    renderDashboard();
+};
+
+function generateStreakHtml() {
+    let html = '<div style="display:flex; gap:0.25rem; align-items:center;" title="Twój Nawyk Nawadnania (ostatnie 7 dni)">';
+    for(let i=6; i>=0; i--) {
+        let d = new Date();
+        d.setDate(d.getDate() - i);
+        let dateStr = d.toISOString().split('T')[0];
+        let w = waterData[dateStr] || 0;
+        let isSuccess = w >= 3000;
+        let color = isSuccess ? '#10b981' : 'rgba(255,255,255,0.1)';
+        let border = isSuccess ? '#059669' : 'rgba(255,255,255,0.2)';
+        
+        // For Light Mode adjustments safely:
+        if (!isSuccess && activeTheme === 'light') {
+            color = 'rgba(0,0,0,0.05)';
+            border = 'rgba(0,0,0,0.1)';
+        }
+        
+        html += `<div style="width:12px; height:12px; border-radius:50%; background:${color}; border:1px solid ${border};"></div>`;
+    }
+    html += '</div>';
+    return html;
+}
+
 function renderDashboard() {
     document.getElementById('floatingTimer').style.display = 'flex';
     if(document.getElementById('timerDisplay').textContent === "01:30") updateTimerDisplay(); // init just once safely
@@ -184,14 +216,18 @@ function renderDashboard() {
     app.innerHTML = `
         <div class="glass-panel" style="animation: fadeIn 0.4s ease-out; position: relative;">
             <div style="position:absolute; top:1.25rem; right:1.25rem; display:flex; gap:0.5rem; align-items:center;">
-                <button onclick="triggerImport()" title="Wgraj kopię zapasową" style="background:transparent; border:1px solid rgba(255, 255, 255, 0.2); color:white; padding:0.4rem; border-radius:0.5rem; cursor:pointer; font-size:0.75rem;">📁 Wczytaj</button>
+                <button onclick="toggleTheme()" title="Zmień motyw" style="background:transparent; border:1px solid rgba(255, 255, 255, 0.2); color:var(--text-color); padding:0.4rem; border-radius:0.5rem; cursor:pointer; font-size:1rem;">${activeTheme === 'dark' ? '🌞' : '🌙'}</button>
+                <button onclick="triggerImport()" title="Wgraj kopię zapasową" style="background:transparent; border:1px solid rgba(255, 255, 255, 0.2); color:var(--text-color); padding:0.4rem; border-radius:0.5rem; cursor:pointer; font-size:0.75rem;">📁 Wczytaj</button>
                 <button onclick="exportData()" title="Zapisz dane do pliku" style="background:transparent; border:1px solid rgba(16, 185, 129, 0.5); color:#10b981; padding:0.4rem; border-radius:0.5rem; cursor:pointer; font-size:0.75rem;">💾 Zapisz</button>
                 <button onclick="logout()" style="background:transparent; border:1px solid rgba(239, 68, 68, 0.5); color:var(--danger); padding:0.4rem 0.8rem; border-radius:0.5rem; cursor:pointer; font-size:0.75rem;">Wyloguj</button>
             </div>
             <input type="file" id="importFile" accept=".json" style="display:none;" onchange="handleImport(event)">
             
             <h1 style="text-align: left; margin-top: 0; font-size:2rem; padding-left:1rem;">Cześć, ${state.username}!</h1>
-            <p class="subtitle" style="text-align: left; margin-bottom: 2.5rem; padding-left:1rem; font-size: 1rem;">Twój zaawansowany panel fitness</p>
+            <div style="display:flex; gap:1.5rem; align-items:center; margin-bottom: 2.5rem; padding-left:1rem;">
+                <p class="subtitle" style="margin-bottom:0; font-size: 1rem;">Twój zaawansowany panel fitness</p>
+                ${generateStreakHtml()}
+            </div>
             
             <div class="dashboard-layout">
                 <div class="tabs">
@@ -254,7 +290,7 @@ function renderTabContent() {
                     </select>
                 </div>
                 
-                <div style="margin-bottom:1.5rem;">
+                <div style="margin-bottom:1rem;">
                     <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Twój Cel</label>
                     <select id="goal" style="width:100%; border-radius:0.5rem; padding:0.75rem 1rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none; font-family:inherit;">
                         <option value="-500">Chcę schudnąć (Redukcja, ok. -0.5kg / tyg.)</option>
@@ -263,11 +299,38 @@ function renderTabContent() {
                     </select>
                 </div>
                 
+                <!-- US Navy BF Toggle -->
+                <div style="margin-bottom: 1.5rem; background: rgba(0,0,0,0.2); padding: 1rem; border-radius: 0.5rem; border: 1px dashed rgba(255,255,255,0.2);">
+                    <div style="display:flex; justify-content:space-between; align-items:center; cursor:pointer;" onclick="document.getElementById('navyFields').classList.toggle('hide')">
+                        <span style="font-size:0.9rem; font-weight:bold;">Wylicz Tkankę Tłuszczową (US Navy Method) 📏</span>
+                        <small style="color:var(--text-muted);">Pokaż ▼</small>
+                    </div>
+                    <div id="navyFields" class="hide" style="margin-top: 1rem; border-top: 1px solid rgba(255,255,255,0.1); padding-top: 1rem;">
+                        <div style="display:flex; gap:0.5rem; margin-bottom:0.5rem;">
+                            <div style="flex:1;">
+                                <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Obwód Pasa (cm)</label>
+                                <input type="number" id="waistCirc" placeholder="Na pępku" step="0.1" style="width:100%; border-radius:0.5rem; padding:0.75rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
+                            </div>
+                            <div style="flex:1;">
+                                <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Obwód Szyi (cm)</label>
+                                <input type="number" id="neckCirc" placeholder="Poniżej jabłka Adama" step="0.1" style="width:100%; border-radius:0.5rem; padding:0.75rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
+                            </div>
+                        </div>
+                        <div style="display:flex; gap:0.5rem;" id="hipFieldContainer" class="hide">
+                            <div style="flex:1;">
+                                <label style="font-size:0.875rem; color:var(--text-muted); display:block; margin-bottom:0.5rem;">Obwód Bioder (cm)</label>
+                                <input type="number" id="hipCirc" placeholder="Najszerszy punkt na pośladkach" step="0.1" style="width:100%; border-radius:0.5rem; padding:0.75rem; background:rgba(0,0,0,0.2); border:1px solid var(--glass-border); color:white; outline:none;">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
                 <button id="calcBmiBtn" class="btn-primary">Oblicz Twój Plan</button>
                 
                 <div id="bmiResult" class="bmi-result hide" style="margin-top: 1.5rem;">
                     <div id="bmiValue" class="bmi-value">--</div>
                     <div id="bmiStatus" class="bmi-status">--</div>
+                    <div id="navyBfResult" style="margin-top:0.5rem; color:#f59e0b; font-weight:bold; font-size:1.1rem; display:none;"></div>
                     
                     <hr style="border:0; border-top: 1px solid var(--glass-border); margin: 1.5rem 0;">
                     
@@ -278,6 +341,16 @@ function renderTabContent() {
                 </div>
             </div>
         `;
+        
+        document.getElementById('gender').addEventListener('change', function(e) {
+            const hips = document.getElementById('hipFieldContainer');
+            if(e.target.value === 'female') {
+                hips.classList.remove('hide');
+            } else {
+                hips.classList.add('hide');
+            }
+        });
+        
         document.getElementById('calcBmiBtn').addEventListener('click', calculateBMI);
     } 
     else if (state.activeTab === 'exercises') {
@@ -303,13 +376,17 @@ function renderTabContent() {
                     </div>
                     <div class="input-group">
                         <label for="exDetails">Serie / Powtórzenia</label>
-                        <input type="text" id="exDetails" placeholder="np. 3x10 lub Waga: 80kg" required autocomplete="off">
+                        <input type="text" id="exDetails" placeholder="np. 3x10 lub Waga: 80kg" autocomplete="off">
                     </div>
-                    <button type="submit" class="btn-primary" style="background:linear-gradient(to right, #8b5cf6, #3b82f6);">Zapisz Wpis</button>
+                    <div style="display:flex; gap:0.5rem; flex-wrap:wrap;">
+                        <button type="submit" class="btn-primary" style="flex:2; background:linear-gradient(to right, #8b5cf6, #3b82f6);">Zapisz Wpis</button>
+                        <button type="button" id="btnGenerateWorkout" class="btn-primary" style="flex:1; background:rgba(255,255,255,0.1); color:var(--text-color); border:1px solid rgba(255,255,255,0.3);" title="Wybierz Partię i kliknij!">🎲 Wylosuj Trening</button>
+                    </div>
                 </form>
                 <div class="list-container" id="exerciseList"></div>
             </div>
         `;
+        
         
         // Dynamika Selecta Grupy Ćwiczeń
         document.getElementById('exGroup').addEventListener('change', function(e) {
@@ -321,6 +398,27 @@ function renderTabContent() {
                     exNameSelect.innerHTML += `<option value="${ex}">${ex}</option>`;
                 });
             }
+        });
+        
+        // Generator Treningu
+        document.getElementById('btnGenerateWorkout').addEventListener('click', function() {
+            const group = document.getElementById('exGroup').value;
+            if(!group) return alert("Wybierz najpierw Partię Ciała, aby wylosować trening!");
+            
+            let arr = exerciseDB[group].slice(); // copy
+            arr.sort(() => 0.5 - Math.random());
+            let picked = arr.slice(0, Math.min(5, arr.length));
+            
+            picked.forEach(exNameVal => {
+                exercises.push({
+                    id: Date.now().toString() + Math.random().toString(36).substr(2, 5),
+                    name: exNameVal,
+                    details: '3x10 (do przypisania)'
+                });
+            });
+            saveData();
+            renderExercisesList();
+            alert("Losowanie zakończone! 5 Piekielnych Ćwiczeń gotowych do wykonania!");
         });
         
         document.getElementById('exerciseForm').addEventListener('submit', handleAddExercise);
@@ -523,6 +621,26 @@ function calculateBMI() {
 
     statusDiv.textContent = status;
     statusDiv.className = `bmi-status ${colorClass}`;
+    
+    // US Navy Body Fat Method (Optional)
+    const waist = parseFloat(document.getElementById('waistCirc').value);
+    const neck = parseFloat(document.getElementById('neckCirc').value);
+    const hip = parseFloat(document.getElementById('hipCirc').value);
+    const bfResultDiv = document.getElementById('navyBfResult');
+    bfResultDiv.style.display = 'none';
+
+    if (waist && neck) {
+        let bf = 0;
+        if (gender === 'male' && waist > neck) {
+            bf = 495 / (1.0324 - 0.19077 * Math.log10(waist - neck) + 0.15456 * Math.log10(height)) - 450;
+            bfResultDiv.textContent = `Szacowany poziom tkanki tłuszczowej (US Navy): ${bf.toFixed(1)}%`;
+            bfResultDiv.style.display = 'block';
+        } else if (gender === 'female' && hip && (waist + hip > neck)) {
+            bf = 495 / (1.29579 - 0.35004 * Math.log10(waist + hip - neck) + 0.22100 * Math.log10(height)) - 450;
+            bfResultDiv.textContent = `Szacowany poziom tkanki tłuszczowej (US Navy): ${bf.toFixed(1)}%`;
+            bfResultDiv.style.display = 'block';
+        }
+    }
     
     // 2. TDEE Calculation (Mifflin-St Jeor)
     let bmr = 0;
